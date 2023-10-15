@@ -9,6 +9,11 @@ use tauri::Manager;
 use weevibin::state::{AppState, AppStateMutex, VibinState, VibinStateMutex};
 use weevibin::websocket::{WebSocketConnection, WebSocketManager, WebSocketManagerMutex};
 
+#[tauri::command]
+fn greet(name: &str) -> String {
+    format!("Hello, {}! You've been greeted from Rust!", name)
+}
+
 /// Called by the UI once it's ready. There's probably a different idiomatic-Tauri way to do this.
 #[tauri::command]
 async fn on_ui_ready(
@@ -89,7 +94,7 @@ fn main() {
         })
         .manage(app_state)
         .manage(vibin_state)
-        .invoke_handler(tauri::generate_handler![on_ui_ready, set_vibin_server])
+        .invoke_handler(tauri::generate_handler![greet, on_ui_ready, set_vibin_server])
         .run(context)
         .expect("Error while running tauri application");
 }
