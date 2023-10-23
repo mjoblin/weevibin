@@ -1,8 +1,22 @@
+use std::fmt;
 use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
 
 // These represent information to be sent to the front-end via message channels.
+
+#[derive(Debug)]
+pub enum Message {
+    AppState,
+    VibinState,
+    Error,
+}
+
+impl fmt::Display for Message {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(self, f)
+    }
+}
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct StreamerDisplay {
@@ -14,10 +28,39 @@ pub struct StreamerDisplay {
     pub art_url: Option<String>,
 }
 
+#[derive(Clone, Serialize, Deserialize)]
+pub struct Source {
+    pub id: String,
+    pub name: String,
+    pub default_name: String,
+    pub class: String,
+    pub nameable: bool,
+    pub ui_selectable: bool,
+    pub description: String,
+    pub description_locale: String,
+    pub preferred_order: isize,
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct StreamerSources {
+    pub active: Source,
+    pub available: Vec<Source>,
+}
+
 #[derive(Clone, Serialize)]
 pub struct Amplifier {
     pub mute: Option<String>,
     pub volume: Option<f32>,
+}
+
+// TODO: Consider adding proper types for play_state, active_controls, etc. Keeping them as
+//  strings is arguably too loose as they are actually well-defined strings (enums).
+#[derive(Clone, Serialize, Deserialize)]
+pub struct TransportState {
+    pub play_state: Option<String>,
+    pub active_controls: Vec<String>,
+    pub repeat: Option<String>,
+    pub shuffle: Option<String>,
 }
 
 #[derive(Clone, Serialize)]
@@ -25,6 +68,8 @@ pub struct VibinState {
     pub power: Option<String>,
     pub amplifier: Option<Amplifier>,
     pub display: StreamerDisplay,
+    pub transport: Option<TransportState>,
+    pub source: Option<Source>,
 }
 
 impl VibinState {
@@ -40,6 +85,8 @@ impl VibinState {
                 playback_source: None,
                 art_url: None,
             },
+            transport: None,
+            source: None,
         }
     }
 }

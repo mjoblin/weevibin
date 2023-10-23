@@ -12,11 +12,22 @@ use tokio_tungstenite::connect_async;
 use tungstenite;
 
 use crate::state::{
-    Amplifier, AppState, AppStateMutex, StreamerDisplay, VibinConnectionState, VibinStateMutex,
+    Amplifier,
+    AppState,
+    AppStateMutex,
+    Message,
+    Source,
+    StreamerDisplay,
+    StreamerSources,
+    TransportState,
+    VibinConnectionState,
+    VibinStateMutex,
 };
 
 // TODO: Handle WebSocket connection errors for bubbling back to the UI, e.g.:
 //   Io(Custom { kind: Uncategorized, error: "failed to lookup address information: nodename nor servname provided, or not known" })
+// TODO: Handle initial state (e.g. ensure full transport state is known at startup, before next
+//  track starts.
 
 // These represent messages received from the Vibin WebSocket server.
 
@@ -32,6 +43,7 @@ struct VibinMessage {
 
 #[derive(Deserialize)]
 struct StreamerPayload {
+    sources: Option<StreamerSources>,
     display: Option<StreamerDisplay>,
 }
 
@@ -46,6 +58,14 @@ struct SystemPayload {
     power: Option<String>,
     streamer: StreamerPayload,
     amplifier: Option<AmplifierPayload>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct TransportStatePayload {
+    pub play_state: Option<String>,
+    pub active_controls: Vec<String>,
+    pub repeat: Option<String>,
+    pub shuffle: Option<String>,
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -64,13 +84,13 @@ trait CustomEmitters {
 
 impl CustomEmitters for AppHandle {
     fn emit_app_state(&self, app_state: &AppState) {
-        self.emit_all("app-state", app_state).unwrap();
+        self.emit_all(&Message::AppState.to_string(), app_state).unwrap();
         println!("SENT: {:?}", app_state);
     }
 
     fn emit_error(&self, error_message: &str) {
         self.emit_all(
-            "app-error",
+            &Message::Error.to_string(),
             AppError {
                 message: error_message.into(),
             },
@@ -208,7 +228,22 @@ impl WebSocketConnection {
                     system_state.display.art_url = display.art_url;
                 }
 
+                if let Some(sources) = system_payload.streamer.sources {
+                    system_state.source = Some(sources.active);
+                }
+
                 send_update_to_client = true;
+            }
+            "TransportState" => {
+                let transport_payload: TransportStatePayload =
+                    serde_json::from_value(vibin_msg.payload).unwrap();
+
+                system_state.transport = Some(TransportState {
+                    play_state: transport_payload.play_state,
+                    active_controls: transport_payload.active_controls,
+                    repeat: transport_payload.repeat,
+                    shuffle: transport_payload.shuffle,
+                });
             }
             "Position" => {}
             _ => {}
@@ -216,7 +251,7 @@ impl WebSocketConnection {
 
         if send_update_to_client {
             app_handle
-                .emit_all("vibin-state", &(*system_state))
+                .emit_all(&Message::VibinState.to_string(), &(*system_state))
                 .unwrap();
         }
     }
@@ -241,10 +276,6 @@ impl WebSocketConnection {
             }
 
             app_state.vibin_connection = VibinConnectionState::Connecting;
-            println!("SEND 1: {:?}", app_state);
-            app_handle
-                .emit_all("message-test-1", "message 1 (CONNECTING)".to_owned())
-                .unwrap();
             app_handle.emit_app_state(&app_state);
         }
 
@@ -260,10 +291,6 @@ impl WebSocketConnection {
                 self.vibin_server
             );
             app_state.vibin_connection = VibinConnectionState::Connected;
-            println!("SEND 2: {:?}", app_state);
-            app_handle
-                .emit_all("message-test-2", "message 2 (CONNECTED)".to_owned())
-                .unwrap();
             app_handle.emit_app_state(&app_state);
         }
 
@@ -280,21 +307,30 @@ impl WebSocketConnection {
 
         read.take_until(stop_reading)
             .for_each(|message| async {
-                match message.unwrap().into_text() {
-                    Ok(message_text) => match serde_json::from_str::<VibinMessage>(&message_text) {
-                        Ok(vibin_msg) => {
-                            let app_handle = app_handle.clone();
-                            self.process_message(vibin_msg, vibin_state_mutex, app_handle);
-                        }
-                        Err(e) => app_handle.emit_error(&format!(
-                            "Could not deserialize WebSocket message; error: {:?} :: message: {}",
-                            e, message_text
-                        )),
-                    },
-                    Err(e) => app_handle.emit_error(&format!(
-                        "Could not extract text from WebSocket message: {:?}",
-                        e
-                    )),
+                let msg = message.unwrap();
+
+                if msg.is_ping() {
+                    println!("Got ping");
+                } else {
+                    match msg.into_text() {
+                        Ok(message_text) => match serde_json::from_str::<VibinMessage>(&message_text) {
+                            Ok(vibin_msg) => {
+                                let app_handle = app_handle.clone();
+                                self.process_message(vibin_msg, vibin_state_mutex, app_handle);
+                            }
+                            Err(e) => app_handle.emit_error(&format!(
+                                "Could not deserialize WebSocket message; error: {:?} :: message: {}",
+                                e, message_text
+                            )),
+                        },
+                        Err(e) => {
+                            println!("MESSAGE TAKE ERROR: {:?}", e);
+                            app_handle.emit_error(&format!(
+                                "Could not extract text from WebSocket message: {:?}",
+                                e
+                            ))
+                        },
+                    }
                 }
             })
             .await;
