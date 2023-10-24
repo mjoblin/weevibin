@@ -12,11 +12,12 @@ use tokio_tungstenite::connect_async;
 use tungstenite;
 
 use crate::state::{
+    ActiveTrack,
     Amplifier,
     AppState,
     AppStateMutex,
     Message,
-    Source,
+    Position,
     StreamerDisplay,
     StreamerSources,
     TransportState,
@@ -29,7 +30,10 @@ use crate::state::{
 // TODO: Handle initial state (e.g. ensure full transport state is known at startup, before next
 //  track starts.
 
-// These represent messages received from the Vibin WebSocket server.
+// These structs represent messages received from the Vibin WebSocket server. The weevibin
+// WebSocket client waits for various Vibin messages types (System, TransportState, Position),
+// and uses their contents to update the shared VibinState struct -- which is then sent to the
+// UI for display.
 
 #[derive(Deserialize)]
 struct VibinMessage {
@@ -40,6 +44,9 @@ struct VibinMessage {
     msg_type: String,
     payload: serde_json::Value,
 }
+
+// ------------------------------------------------------------------------------------------------
+// System message
 
 #[derive(Deserialize)]
 struct StreamerPayload {
@@ -60,12 +67,60 @@ struct SystemPayload {
     amplifier: Option<AmplifierPayload>,
 }
 
+// ------------------------------------------------------------------------------------------------
+// TransportState message
+
 #[derive(Serialize, Deserialize)]
 struct TransportStatePayload {
     pub play_state: Option<String>,
     pub active_controls: Vec<String>,
     pub repeat: Option<String>,
     pub shuffle: Option<String>,
+}
+
+// ------------------------------------------------------------------------------------------------
+// Position message
+
+#[derive(Serialize, Deserialize)]
+struct PositionPayload {
+    pub position: isize,
+}
+
+// ------------------------------------------------------------------------------------------------
+// CurrentlyPlaying message
+
+#[derive(Serialize, Deserialize)]
+struct StreamWS {
+    pub url: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct FormatWS {
+    pub sample_format: Option<String>,
+    pub mqa: Option<String>,
+    pub codec: Option<String>,
+    pub lossless: Option<bool>,
+    pub sample_rate: Option<isize>,
+    pub bit_depth: Option<isize>,
+    pub encoding: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct ActiveTrackWS {
+    pub title: Option<String>,
+    pub artist: Option<String>,
+    pub album: Option<String>,
+    pub art_url: Option<String>,
+    pub duration: Option<isize>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct CurrentlyPlayingPayload {
+    pub album_media_id: Option<String>,
+    pub track_media_id: Option<String>,
+    pub active_track: ActiveTrackWS,
+    pub format: FormatWS,
+    pub stream: StreamWS,
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -202,7 +257,7 @@ impl WebSocketConnection {
         vibin_state_mutex: &VibinStateMutex,
         app_handle: AppHandle,
     ) {
-        let mut system_state = vibin_state_mutex.lock().unwrap();
+        let mut vibin_state = vibin_state_mutex.lock().unwrap();
         let mut send_update_to_client = false;
 
         match vibin_msg.msg_type.as_str() {
@@ -210,26 +265,26 @@ impl WebSocketConnection {
                 let system_payload: SystemPayload =
                     serde_json::from_value(vibin_msg.payload).unwrap();
 
-                system_state.power = system_payload.power;
+                vibin_state.power = system_payload.power;
 
                 if let Some(amplifier) = system_payload.amplifier {
-                    system_state.amplifier = Some(Amplifier {
+                    vibin_state.amplifier = Some(Amplifier {
                         mute: amplifier.mute,
                         volume: amplifier.volume,
                     });
                 }
 
                 if let Some(display) = system_payload.streamer.display {
-                    system_state.display.line1 = display.line1;
-                    system_state.display.line2 = display.line2;
-                    system_state.display.line3 = display.line3;
-                    system_state.display.format = display.format;
-                    system_state.display.playback_source = display.playback_source;
-                    system_state.display.art_url = display.art_url;
+                    vibin_state.display.line1 = display.line1;
+                    vibin_state.display.line2 = display.line2;
+                    vibin_state.display.line3 = display.line3;
+                    vibin_state.display.format = display.format;
+                    vibin_state.display.playback_source = display.playback_source;
+                    vibin_state.display.art_url = display.art_url;
                 }
 
                 if let Some(sources) = system_payload.streamer.sources {
-                    system_state.source = Some(sources.active);
+                    vibin_state.source = Some(sources.active);
                 }
 
                 send_update_to_client = true;
@@ -238,20 +293,45 @@ impl WebSocketConnection {
                 let transport_payload: TransportStatePayload =
                     serde_json::from_value(vibin_msg.payload).unwrap();
 
-                system_state.transport = Some(TransportState {
+                vibin_state.transport = Some(TransportState {
                     play_state: transport_payload.play_state,
                     active_controls: transport_payload.active_controls,
                     repeat: transport_payload.repeat,
                     shuffle: transport_payload.shuffle,
                 });
+
+                send_update_to_client = true;
             }
-            "Position" => {}
+            "CurrentlyPlaying" => {
+                let currently_playing: CurrentlyPlayingPayload =
+                    serde_json::from_value(vibin_msg.payload).unwrap();
+
+                vibin_state.active_track = Some(ActiveTrack {
+                    title: currently_playing.active_track.title,
+                    artist: currently_playing.active_track.artist,
+                    album: currently_playing.active_track.album,
+                    art_url: currently_playing.active_track.art_url,
+                    duration: currently_playing.active_track.duration,
+                });
+
+                send_update_to_client = true;
+            }
+            "Position" => {
+                let position_payload: PositionPayload =
+                    serde_json::from_value(vibin_msg.payload).unwrap();
+
+                app_handle
+                    .emit_all(&Message::Position.to_string(), Position {
+                        position: position_payload.position,
+                    })
+                    .unwrap();
+            }
             _ => {}
         }
 
         if send_update_to_client {
             app_handle
-                .emit_all(&Message::VibinState.to_string(), &(*system_state))
+                .emit_all(&Message::VibinState.to_string(), &(*vibin_state))
                 .unwrap();
         }
     }

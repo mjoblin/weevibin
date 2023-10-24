@@ -15,7 +15,7 @@
         `--color:${color};--color-dim:${colorDim};--color-bright:${colorBright};--color-max:${colorMax}`;
 </script>
 
-<button type="button" style={cssVarStyles} on:click {disabled}>
+<button type="button" style={cssVarStyles} {disabled} on:click>
     <svelte:component this={icon} {size}/>
 </button>
 

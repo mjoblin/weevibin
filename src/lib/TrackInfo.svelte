@@ -1,5 +1,5 @@
-<script>
-    import { vibinState } from "./state.ts";
+<script lang="ts">
+    import { vibinState } from "./state";
 </script>
 
 <div class="TrackInfo">

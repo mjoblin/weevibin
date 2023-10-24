@@ -2,6 +2,8 @@ import { derived, writable } from "svelte/store";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/tauri";
 
+// These are the TypeScript equivalents of the Rust structs defined in src-tauri/src/state.rs
+
 type Power = "on" | "off";
 
 type PlayStatus =
@@ -53,6 +55,14 @@ type Source = {
     preferred_order: number;
 };
 
+type ActiveTrack = {
+    title: string;
+    artist: string;
+    album: string;
+    art_url: string;
+    duration: number;
+}
+
 type Amplifier = {
     mute?: Power,
     volume?: number,
@@ -80,17 +90,29 @@ type VibinState = {
     display: StreamerDisplay,
     transport?: Transport,
     source?: Source,
+    active_track?: ActiveTrack,
+}
+
+type Position = {
+    position: number,
 }
 
 export let vibinState = writable<VibinState>({ display: {} });
 
 export const isPlaying = derived(vibinState, ($vibinState) => $vibinState.transport?.play_state === "play");
 
+export let playheadPosition = writable<number | null>(null);
+
 const initialize = async () => {
     // await listen("AppState", (message) => console.log("AppState", message.payload));
+
     await listen<VibinState>("VibinState", (message) => {
-        console.log("VibinState", message.payload);
+        // console.log("VibinState", message.payload);
         vibinState.set(message.payload);
+    });
+
+    await listen<Position>("Position", (message) => {
+        playheadPosition.set(message.payload.position);
     });
 
     await invoke("on_ui_ready");

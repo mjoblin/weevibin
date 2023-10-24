@@ -1,30 +1,27 @@
 <script lang="ts">
     import {
+        IconArrowsShuffle,
         IconPlayerPauseFilled,
         IconPlayerPlayFilled,
         IconPlayerStopFilled,
         IconPlayerTrackNextFilled,
         IconPlayerTrackPrevFilled,
+        IconRepeat,
     } from "@tabler/icons-svelte";
 
-    import { isPlaying, vibinState } from "./state.ts";
+    import { isPlaying, vibinState } from "./state";
+    import {
+        togglePlayback,
+        nextTrack,
+        pause,
+        play,
+        previousTrack,
+        stop,
+        toggleRepeat,
+        toggleShuffle,
+    } from "./vibinApi";
     import IconButton from "./IconButton.svelte";
-
-    const sendVibinCommand = async (endpoint: string) => {
-        const response = await fetch(
-            `http://192.168.2.101:8080/api${endpoint}`,
-            {
-                method: "POST",
-            }
-        );
-    }
-
-    const togglePlayback = async () => await sendVibinCommand("/transport/toggle_playback");
-    const nextTrack = async () => await sendVibinCommand("/transport/next");
-    const pause = async () => await sendVibinCommand("/transport/pause");
-    const play = async () => await sendVibinCommand("/transport/play");
-    const previousTrack = async () => await sendVibinCommand("/transport/previous");
-    const stop = async () => await sendVibinCommand("/transport/stop");
+    import ToggleButton from "./ToggleButton.svelte";
 
     $: canPauseOrStop =
         $isPlaying &&
@@ -83,6 +80,22 @@
         disabled={!$vibinState.transport?.active_controls?.includes("next")}
         on:click={() => nextTrack()}
     />
+
+    <!-- Repeat and Shuffle toggles -->
+    <div class="Toggles">
+        <ToggleButton
+            isOn={$vibinState.transport?.repeat === "all"}
+            icon={IconRepeat}
+            disabled={!$vibinState.transport?.active_controls.includes("repeat")}
+            on:click={() => toggleRepeat()}
+        />
+        <ToggleButton
+            isOn={$vibinState.transport?.shuffle === "all"}
+            icon={IconArrowsShuffle}
+            disabled={!$vibinState.transport?.active_controls.includes("shuffle")}
+            on:click={() => toggleShuffle()}
+        />
+    </div>
 </div>
 
 <style>
@@ -90,5 +103,10 @@
         display: flex;
         flex-direction: row;
         align-items: center;
+    }
+
+    .Toggles {
+        display: flex;
+        flex-direction: column;
     }
 </style>
