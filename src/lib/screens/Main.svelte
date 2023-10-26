@@ -1,10 +1,10 @@
 <script lang="ts">
-    import MiscDetails from "./MiscDetails.svelte";
-    import Playhead from "./Playhead.svelte";
-    import TrackInfo from "./TrackInfo.svelte";
-    import TransportControls from "./TransportControls.svelte";
-    import VolumeControls from "./VolumeControls.svelte";
-    import { seek } from "./vibinApi.ts";
+    import { seek } from "../vibinApi.ts";
+    import MiscDetails from "../components/MiscDetails.svelte";
+    import Playhead from "../components/Playhead.svelte";
+    import TrackInfo from "../components/TrackInfo.svelte";
+    import TransportControls from "../components/TransportControls.svelte";
+    import VolumeControls from "../components/VolumeControls.svelte";
 
     const handleSeek = async (e: MouseEvent) => {
         const targetSecs = parseInt((e.target as HTMLInputElement).value);
@@ -13,13 +13,15 @@
 </script>
 
 <div class="Layout">
-    <TrackInfo />
+    <div class="Playing">
+        <TrackInfo />
+        <VolumeControls />
+    </div>
     <div class="Controls">
         <TransportControls />
         <Playhead on:click={handleSeek} />
     </div>
     <MiscDetails />
-    <VolumeControls />
 </div>
 
 <style>
@@ -27,6 +29,13 @@
         display: flex;
         flex-direction: column;
         gap: 5px;
+    }
+
+    .Playing {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
     }
 
     .Controls {

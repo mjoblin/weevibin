@@ -4,6 +4,10 @@ import { invoke } from "@tauri-apps/api/tauri";
 
 // These are the TypeScript equivalents of the Rust structs defined in src-tauri/src/state.rs
 
+type AppState = {
+    vibin_connection: string;
+};
+
 type Power = "on" | "off";
 
 type PlayStatus =
@@ -97,6 +101,12 @@ type Position = {
     position: number,
 }
 
+type Screen = "main" | "settings";
+
+export let currentScreen = writable<Screen>("main");
+
+export let appState = writable<AppState>({ vibin_connection: "" });
+
 export let vibinState = writable<VibinState>({ display: {} });
 
 export const isPlaying = derived(vibinState, ($vibinState) => $vibinState.transport?.play_state === "play");
@@ -104,7 +114,9 @@ export const isPlaying = derived(vibinState, ($vibinState) => $vibinState.transp
 export let playheadPosition = writable<number | null>(null);
 
 const initialize = async () => {
-    // await listen("AppState", (message) => console.log("AppState", message.payload));
+    await listen<AppState>("AppState", (message) => {
+        appState.set(message.payload);
+    });
 
     await listen<VibinState>("VibinState", (message) => {
         // console.log("VibinState", message.payload);

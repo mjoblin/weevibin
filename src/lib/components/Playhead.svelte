@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { playheadPosition, vibinState } from "./state.ts";
+    import { playheadPosition, vibinState } from "../state.ts";
 
     $: progress = $playheadPosition && $vibinState.active_track?.duration ?
         ($playheadPosition / $vibinState.active_track.duration) * 100 : 0;

@@ -9,7 +9,7 @@
         IconRepeat,
     } from "@tabler/icons-svelte";
 
-    import { isPlaying, vibinState } from "./state";
+    import { isPlaying, vibinState } from "../state.ts";
     import {
         togglePlayback,
         nextTrack,
@@ -19,9 +19,9 @@
         stop,
         toggleRepeat,
         toggleShuffle,
-    } from "./vibinApi";
-    import IconButton from "./IconButton.svelte";
-    import ToggleButton from "./ToggleButton.svelte";
+    } from "../vibinApi.ts";
+    import IconButton from "./buttons/IconButton.svelte";
+    import ToggleButton from "./buttons/ToggleButton.svelte";
 
     $: canPauseOrStop =
         $isPlaying &&

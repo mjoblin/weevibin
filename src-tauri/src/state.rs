@@ -78,15 +78,15 @@ pub struct StreamerDisplay {
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct Source {
-    pub id: String,
-    pub name: String,
-    pub default_name: String,
-    pub class: String,
-    pub nameable: bool,
-    pub ui_selectable: bool,
-    pub description: String,
-    pub description_locale: String,
-    pub preferred_order: isize,
+    pub id: Option<String>,
+    pub name: Option<String>,
+    pub default_name: Option<String>,
+    pub class: Option<String>,
+    pub nameable: Option<bool>,
+    pub ui_selectable: Option<bool>,
+    pub description: Option<String>,
+    pub description_locale: Option<String>,
+    pub preferred_order: Option<isize>,
 }
 
 #[derive(Clone, Serialize, Deserialize)]

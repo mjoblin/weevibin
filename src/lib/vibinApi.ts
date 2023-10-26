@@ -7,6 +7,11 @@ export const sendVibinCommand = async (endpoint: string) => {
     );
 }
 
+// System
+
+export const powerOn = async () => await sendVibinCommand("/system/power/on");
+export const powerOff = async () => await sendVibinCommand("/system/power/off");
+
 // Transport
 
 export const togglePlayback = async () => await sendVibinCommand("/transport/toggle_playback");
@@ -21,3 +26,6 @@ export const seek = async (target: number) => await sendVibinCommand(`/transport
 
 // Amplifier
 export const toggleMute = async () => await sendVibinCommand("/system/amplifier/mute/toggle");
+export const volumeUp = async () => await sendVibinCommand("/system/amplifier/volume/up");
+export const volumeDown = async () => await sendVibinCommand("/system/amplifier/volume/down");
+export const volumeSet = async (level: number) => await sendVibinCommand(`/system/amplifier/volume/${level}`);
