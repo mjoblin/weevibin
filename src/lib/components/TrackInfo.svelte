@@ -35,6 +35,7 @@
         background-size: contain;
         background-repeat: no-repeat;
         background-position: center center;
+        border-radius: 3px;
     }
 
     .details {
@@ -54,15 +55,16 @@
 
         & span:first-of-type {
             font-weight: bold;
+            font-size: 0.9em;
         }
 
         & span:nth-of-type(2) {
-            font-size: 0.9rem;
+            font-size: 0.7em;
         }
 
         & span:last-of-type {
             color: #a0a0a0;
-            font-size: 0.8rem;
+            font-size: 0.7em;
         }
     }
 </style>

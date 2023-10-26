@@ -35,7 +35,7 @@
             on:click={toggleMute}
         />
 
-        <Arc radius={20} thickness={3} progress={360 * volume}>
+        <Arc radius={20} thickness={4} progress={360 * volume} color="orange" trackColor="#41444a">
             <span class="currentVolumeLevel">{volumeDisplay}</span>
         </Arc>
 
