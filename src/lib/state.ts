@@ -4,8 +4,17 @@ import { invoke } from "@tauri-apps/api/tauri";
 
 // These are the TypeScript equivalents of the Rust structs defined in src-tauri/src/state.rs
 
+export type ConnectionStatus = "Connected" | "Connecting" | "Disconnected";
+
 type AppState = {
-    vibin_connection: string;
+    vibin_connection: ConnectionStatus;
+};
+
+type AppErrorCategory = "WebSocket";
+
+type AppError = {
+    category: AppErrorCategory;
+    message: string;
 };
 
 type Power = "on" | "off";
@@ -105,7 +114,9 @@ type Screen = "main" | "settings";
 
 export let currentScreen = writable<Screen>("main");
 
-export let appState = writable<AppState>({ vibin_connection: "" });
+export let appErrorState = writable<AppError>();
+
+export let appState = writable<AppState>({ vibin_connection: "Disconnected" });
 
 export let vibinState = writable<VibinState>({ display: {} });
 
@@ -125,6 +136,11 @@ const initialize = async () => {
 
     await listen<Position>("Position", (message) => {
         playheadPosition.set(message.payload.position);
+    });
+
+    await listen<AppError>("Error", (message) => {
+        appErrorState.set(message.payload);
+        console.log("Error", message.payload);
     });
 
     await invoke("on_ui_ready");

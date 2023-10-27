@@ -3,7 +3,7 @@
     import Badge from "./Badge.svelte";
     import PowerButton from "./buttons/PowerButton.svelte";
     import Settings from "./buttons/SettingsButton.svelte";
-    import Status from "./Status.svelte";
+    import WebSocketConnectionStatus from "./WebSocketConnectionStatus.svelte";
 
     // The "source" is the streamer's current input (AirPlay, local media, internet radio, etc); and
     // the "playback source" is the associated stream source (computer/phone name for AirPlay, NAS
@@ -24,12 +24,12 @@
             </div>
         </Badge>
         <div class="formatDetails">
-            {$vibinState.display.format}
+            {$vibinState.display.format || ""}
         </div>
-        <Status/>
     </div>
 
     <div class="rhs">
+        <WebSocketConnectionStatus />
         <Settings/>
         <PowerButton/>
     </div>
@@ -40,7 +40,7 @@
         display: flex;
         gap: 10px;
         font-size: 0.8em;
-        color: #7e7e7e;
+        color: #9e9e9e;
         justify-content: space-between;
     }
 

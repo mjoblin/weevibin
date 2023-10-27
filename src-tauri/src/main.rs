@@ -46,10 +46,12 @@ async fn set_vibin_server(
         Ok(_) => {
             println!("Setting server: {:?}", vibin_server);
 
+            println!("Command is waiting for WebSocket manager lock");
             let mut manager = ws_manager.inner().lock().await;
 
             println!("Command is waiting for WebSocket disconnect");
             manager.stop().await;
+
             println!("Command wait complete");
 
             *manager.vibin_server = vibin_server;

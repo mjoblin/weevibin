@@ -24,6 +24,7 @@ use crate::state::{
     VibinConnectionState,
     VibinStateMutex,
 };
+use crate::state::VibinConnectionState::{Connected, Connecting, Disconnected};
 
 // TODO: Handle WebSocket connection errors for bubbling back to the UI, e.g.:
 //   Io(Custom { kind: Uncategorized, error: "failed to lookup address information: nodename nor servname provided, or not known" })
@@ -126,7 +127,13 @@ struct CurrentlyPlayingPayload {
 // ------------------------------------------------------------------------------------------------
 
 #[derive(Clone, Serialize)]
+pub enum AppErrorCategory {
+    WebSocket,
+}
+
+#[derive(Clone, Serialize)]
 pub struct AppError {
+    pub category: AppErrorCategory,
     pub message: String,
 }
 
@@ -134,7 +141,7 @@ pub struct AppError {
 
 trait CustomEmitters {
     fn emit_app_state(&self, app_state: &AppState);
-    fn emit_error(&self, error_message: &str);
+    fn emit_websocket_error(&self, error_message: &str);
 }
 
 impl CustomEmitters for AppHandle {
@@ -143,10 +150,11 @@ impl CustomEmitters for AppHandle {
         println!("SENT: {:?}", app_state);
     }
 
-    fn emit_error(&self, error_message: &str) {
+    fn emit_websocket_error(&self, error_message: &str) {
         self.emit_all(
             &Message::Error.to_string(),
             AppError {
+                category: AppErrorCategory::WebSocket,
                 message: error_message.into(),
             },
         )
@@ -165,7 +173,7 @@ pub struct WebSocketManager {
     pub vibin_state_mutex: VibinStateMutex,
     pub app_handle: AppHandle,
 
-    pub is_started: bool,
+    pub is_started: Arc<Mutex<bool>>,
 }
 
 impl WebSocketManager {
@@ -185,20 +193,20 @@ impl WebSocketManager {
             vibin_state_mutex,
             app_handle,
 
-            is_started: false,
+            is_started: Arc::new(Mutex::new(false)),
         }
     }
 
     pub fn start(&mut self) {
-        if self.is_started == true {
+        if *self.is_started.lock().unwrap() == true {
             println!("WebSocketManager is already started; ignoring start request");
             return;
         }
 
-        self.is_started = true;
+        *self.is_started.lock().unwrap() = true;
 
         println!("WebSocketManager has been started");
-        let self_clone = self.clone();
+        let mut self_clone = self.clone();
         *self.stop_flag.lock().unwrap() = false;
 
         tauri::async_runtime::spawn(async move {
@@ -217,25 +225,35 @@ impl WebSocketManager {
                 .await;
 
             println!("WebSocketManager start() of WebSocketConnection has completed");
+
+            self_clone.app_state_mutex.lock().unwrap().vibin_connection = Disconnected;
+            *self_clone.is_started.lock().unwrap() = false;
+            self_clone.app_handle.emit_app_state(&self_clone.app_state_mutex.lock().unwrap());
         });
+
+        println!("End of start function");
     }
 
     pub async fn stop(&mut self) {
+        if self.app_state_mutex.lock().unwrap().vibin_connection != Connected {
+            println!("WebSocketManager not connected; ignoring stop() request");
+            return;
+        }
+
         println!("WebSocketManager requesting WebSocketConnection disconnect");
         *self.stop_flag.lock().unwrap() = true;
 
         println!("WebSocketManager waiting for disconnect");
 
-        while self.app_state_mutex.lock().unwrap().vibin_connection
-            != VibinConnectionState::Disconnected
-        {
+        while self.app_state_mutex.lock().unwrap().vibin_connection != Disconnected {
             time::sleep(time::Duration::from_millis(100)).await;
         }
 
         // wait_for_disconnected.await;
         println!("WebSocketManager has detected WebSocketConnection disconnect");
 
-        self.is_started = false;
+        self.app_state_mutex.lock().unwrap().vibin_connection = Disconnected;
+        *self.is_started.lock().unwrap() = false;
     }
 }
 
@@ -347,21 +365,52 @@ impl WebSocketConnection {
             //  the subsequent .await call. Ref: https://tokio.rs/tokio/tutorial/shared-state
             let mut app_state = app_state_mutex.lock().unwrap();
 
-            if app_state.vibin_connection != VibinConnectionState::Disconnected {
-                println!(
+            if app_state.vibin_connection != Disconnected {
+                let err = format!(
                     "Connection state is not {:?}; not proceeding with Vibin WebSocket connection",
-                    VibinConnectionState::Disconnected
+                    Disconnected
                 );
+
+                println!("{}", &err);
+                app_handle.emit_websocket_error(&err);
+
                 return Ok(());
             }
-
-            app_state.vibin_connection = VibinConnectionState::Connecting;
-            app_handle.emit_app_state(&app_state);
         }
 
         // let url = url::Url::parse("ws://192.168.2.101:8080/ws").unwrap();
-        let url = url::Url::parse(self.vibin_server.as_str()).unwrap();
-        let (ws_stream, _) = connect_async(&url).await?;
+        // let url = url::Url::parse(self.vibin_server.as_str()).unwrap();
+
+        let url = match url::Url::parse(self.vibin_server.as_str()) {
+            Ok(url) => url,
+            Err(e) => {
+                app_handle.emit_websocket_error(&format!("Vibin server URL parsing error: {:?}", e));
+                return Ok(());
+            }
+        };
+
+        {
+            let mut app_state = app_state_mutex.lock().unwrap();
+            app_state.vibin_connection = Connecting;
+            app_handle.emit_app_state(&app_state);
+        }
+
+        let connect_timeout = tokio::time::Duration::from_secs(5);
+        let connect_attempt = connect_async(&url);
+
+        let (ws_stream, _) = match tokio::time::timeout(connect_timeout, connect_attempt).await {
+            Ok(Ok(result)) => result,
+            Ok(Err(e)) => {
+                // Connection failed
+                app_handle.emit_websocket_error(&format!("Connection error: {:?}", e));
+                return Err(e);
+            }
+            Err(e) => {
+                // Timeout
+                app_handle.emit_websocket_error(&format!("Timed out connecting to: {url}"));
+                return Ok(());
+            }
+        };
 
         {
             let mut app_state = app_state_mutex.lock().unwrap();
@@ -370,7 +419,7 @@ impl WebSocketConnection {
                 "Connected to Vibin WebSocket server: {:?}",
                 self.vibin_server
             );
-            app_state.vibin_connection = VibinConnectionState::Connected;
+            app_state.vibin_connection = Connected;
             app_handle.emit_app_state(&app_state);
         }
 
@@ -398,14 +447,14 @@ impl WebSocketConnection {
                                 let app_handle = app_handle.clone();
                                 self.process_message(vibin_msg, vibin_state_mutex, app_handle);
                             }
-                            Err(e) => app_handle.emit_error(&format!(
+                            Err(e) => app_handle.emit_websocket_error(&format!(
                                 "Could not deserialize WebSocket message; error: {:?} :: message: {}",
                                 e, message_text
                             )),
                         },
                         Err(e) => {
                             println!("MESSAGE TAKE ERROR: {:?}", e);
-                            app_handle.emit_error(&format!(
+                            app_handle.emit_websocket_error(&format!(
                                 "Could not extract text from WebSocket message: {:?}",
                                 e
                             ))
@@ -417,7 +466,7 @@ impl WebSocketConnection {
 
         // TODO: Investigate what happens when the WebSocket connection is disrupted.
         let mut app_state = app_state_mutex.lock().unwrap();
-        app_state.vibin_connection = VibinConnectionState::Disconnected;
+        app_state.vibin_connection = Disconnected;
         app_handle.emit_app_state(&app_state);
 
         println!("Vibin WebSocket reader has completed");
@@ -445,7 +494,7 @@ impl WebSocketConnection {
                 .await
             {
                 Ok(_) => {
-                    println!("WebSocketConnection handle_websocket90 has eneded");
+                    println!("WebSocketConnection handle_websocket() has ended");
                     app_state_mutex.lock().unwrap().set_disconnected();
                     *self.stop_flag.as_ref().unwrap().lock().unwrap() = false;
 
@@ -455,14 +504,25 @@ impl WebSocketConnection {
                 }
                 Err(e) => match e {
                     tungstenite::Error::ConnectionClosed | tungstenite::Error::Io(_) => {
-                        println!("WebSocket manager error: {:?}", e);
+                        let prior_connection_state = app_state_mutex.lock().unwrap().vibin_connection.clone();
                         app_state_mutex.lock().unwrap().set_disconnected();
 
+                        println!("WebSocket manager error: {:?}", e);
+                        app_handle.emit_websocket_error(&format!("IO error: {:?}", e));
+
+                        if (prior_connection_state != Connected) {
+                            // If we're here then it's likely that we attempted to connect using a
+                            // vibin host provided by the user, but the connection failed.
+                            break;
+                        }
+
+                        println!("Will attempt reconnect in 5 seconds");
                         tokio::time::sleep(tokio::time::Duration::from_millis(5000)).await;
                     }
                     _ => {
+                        app_handle.emit_websocket_error(&format!("Unknown error: {:?}", e));
                         println!("Unhandled WebSocket manager error: {:?}", e);
-                        return;
+                        break;
                     }
                 },
             }

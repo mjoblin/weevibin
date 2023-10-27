@@ -60,6 +60,8 @@
         cursor: not-allowed;
         width: 100%;
         height: 3px;
+        border: none;
+        padding: 0;
         border-radius: 2px;
         background: linear-gradient(
             to right,
@@ -68,10 +70,6 @@
             var(--progress-remaining-color) var(--progress),
             var(--progress-remaining-color) 100%
         );
-        /*background: transparent;*/
-        /*color: red;*/
-        /*background-color: red;*/
-        /*accent-color: green;*/
     }
 
     input[type="range"]::-webkit-slider-thumb {
@@ -82,7 +80,6 @@
         appearance: none;
         box-shadow: none;
         border: none;
-        /*background: transparent;*/
     }
 
     .canSeek {
