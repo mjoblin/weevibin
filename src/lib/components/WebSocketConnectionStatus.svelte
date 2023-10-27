@@ -7,16 +7,17 @@
         Connected: "green",
         Connecting: "yellow",
         Disconnected: "red",
+        Disconnecting: "yellow",
     }
 
-    $: connectionStatus = $appState.vibin_connection;
+    $: connectionStatus = $appState.vibin_connection.state;
     $: cssVarStyles = `--status-color:${statusColors[connectionStatus] || "transparent"}`
 </script>
 
 {#if !hideIfConnected || connectionStatus !== "Connected"}
     <div class="WebSocketConnectionStatus" style={cssVarStyles}>
-        <div class="statusLight"></div>
-        <span class="statusText">{$appState.vibin_connection}</span>
+        <div class={"statusLight" + `${["Connecting", "Disconnecting"].includes(connectionStatus) ? " lightAnimation" : ""}`}></div>
+        <span class="statusText">{$appState.vibin_connection.state}</span>
     </div>
 {/if}
 
@@ -39,5 +40,18 @@
             text-transform: lowercase;
             font-size: 0.8em;
         }
+    }
+
+    @keyframes animateLight {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.25);
+        }
+    }
+
+    .lightAnimation {
+        animation: animateLight 1s infinite;
     }
 </style>

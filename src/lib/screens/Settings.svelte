@@ -2,12 +2,14 @@
     import { IconHome } from "@tabler/icons-svelte";
     import { invoke } from "@tauri-apps/api/tauri";
 
-    import { appErrorState, currentScreen } from "../state.ts";
+    import { appErrorState, appState, currentScreen } from "../state.ts";
     import IconButton from "../components/buttons/IconButton.svelte";
     import WebSocketConnectionStatus from "../components/WebSocketConnectionStatus.svelte";
 
     let error = undefined;
     let vibinServer = "192.168.2.101:8080";
+
+    $: connecting = $appState.vibin_connection.state === "Connecting";
 
     const setVibinServer = async () => {
         error = undefined;
@@ -41,21 +43,17 @@
                 <input type="text" bind:value={vibinServer}/>
             </label>
             <div style="display: flex; gap: 30px">
-                <button on:click={setVibinServer}>Connect</button>
-                <WebSocketConnectionStatus hideIfConnected={false}/>
+                <button disabled={connecting} on:click={setVibinServer}>Connect</button>
+                <WebSocketConnectionStatus hideIfConnected={false} />
             </div>
         </div>
     </div>
 
-    <div class="error">
-        <span>{error || $appErrorState.message || ""}</span>
-    </div>
-
-    <!--{#if $appErrorState}-->
-    <!--    <div class="error">-->
-    <!--        <span>{JSON.stringify($appErrorState)}</span>-->
-    <!--    </div>-->
-    <!--{/if}-->
+    {#if $appState.vibin_connection.state === "Disconnected" && $appState.vibin_connection.message}
+        <div class="error">
+            <span>{$appState.vibin_connection.message}</span>
+        </div>
+    {/if}
 </div>
 
 <style>
@@ -70,5 +68,14 @@
     .error {
         margin-top: 10px;
         color: #f32323;
+    }
+
+    @keyframes growShrinkAnimation {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.1);
+        }
     }
 </style>

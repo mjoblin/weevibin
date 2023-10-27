@@ -1,7 +1,8 @@
 use std::fmt;
 use std::sync::{Arc, Mutex};
 
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
+use serde::ser::SerializeStruct;
 
 // ===============================================================================================
 // These represent information to be sent to the front-end via message channels. It includes:
@@ -32,11 +33,46 @@ impl fmt::Display for Message {
 // -----------------------------------------------------------------------------------------------
 // Weevibin application state
 
-#[derive(Debug, PartialEq, Clone, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Deserialize)]
 pub enum VibinConnectionState {
-    Disconnected,
-    Connecting,
-    Connected,
+    Connected(String),
+    Connecting(String),
+    Disconnected(Option<String>),
+    Disconnecting,
+}
+
+impl Serialize for VibinConnectionState {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: Serializer,
+    {
+        match self {
+            VibinConnectionState::Connected(message) => {
+                let mut state = serializer.serialize_struct("VibinConnectionState", 2)?;
+                state.serialize_field("state", "Connected")?;
+                state.serialize_field("message", message)?;
+                state.end()
+            }
+            VibinConnectionState::Connecting(message) => {
+                let mut state = serializer.serialize_struct("VibinConnectionState", 2)?;
+                state.serialize_field("state", "Connecting")?;
+                state.serialize_field("message", message)?;
+                state.end()
+            },
+            VibinConnectionState::Disconnected(message) => {
+                let mut state = serializer.serialize_struct("VibinConnectionState", 2)?;
+                state.serialize_field("state", "Disconnected")?;
+                state.serialize_field("message", message)?;
+                state.end()
+            },
+            VibinConnectionState::Disconnecting => {
+                let mut state = serializer.serialize_struct("VibinConnectionState", 2)?;
+                state.serialize_field("state", "Disconnecting")?;
+                state.serialize_field("message", "")?;
+                state.end()
+            },
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -47,12 +83,12 @@ pub struct AppState {
 impl AppState {
     pub fn new() -> AppState {
         AppState {
-            vibin_connection: VibinConnectionState::Disconnected,
+            vibin_connection: VibinConnectionState::Disconnected(None),
         }
     }
 
-    pub fn set_disconnected(&mut self) {
-        self.vibin_connection = VibinConnectionState::Disconnected;
+    pub fn set_disconnected(&mut self, message: Option<String>) {
+        self.vibin_connection = VibinConnectionState::Disconnected(message);
     }
 }
 
