@@ -1,0 +1,20 @@
+:root {
+    --cerulean: #227c9dff;
+    --burnt-umber: #823329ff;
+    --moss-green: #9a9b73ff;
+    --space-cadet: #2e294eff;
+    --tomato: #ff6542ff;
+
+    --blue: var(--cerulean);
+    --brown: var(--burnt-umber);
+    --green: var(--moss-green);
+    --purple: var(--space-cadet);
+    --orange: var(--tomato);
+}
+
+/* CSS HSL */
+/*--cerulean: hsla(196, 64%, 37%, 1);*/
+/*--tomato: hsla(11, 100%, 63%, 1);*/
+/*--burnt-umber: hsla(7, 52%, 34%, 1);*/
+/*--moss-green: hsla(61, 17%, 53%, 1);*/
+/*--space-cadet: hsla(248, 31%, 23%, 1);*/

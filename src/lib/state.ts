@@ -47,7 +47,7 @@ type RepeatState = "off" | "all";
 
 type ShuffleState = "off" | "all";
 
-type SourceClass =
+export type SourceClass =
     "digital.coax" |
     "digital.toslink" |
     "digital.usb" |
@@ -131,6 +131,8 @@ export const isPlaying = derived(vibinState, ($vibinState) => $vibinState.transp
 
 export let playheadPosition = writable<number | null>(null);
 
+let lastSourceClass: SourceClass | undefined = undefined;
+
 const initialize = async () => {
     await listen<AppState>("AppState", (message) => {
         console.log("AppState", message.payload);
@@ -143,8 +145,12 @@ const initialize = async () => {
     });
 
     await listen<VibinState>("VibinState", (message) => {
-        // console.log("VibinState", message.payload);
         vibinState.set(message.payload);
+
+        if (message.payload.source?.class !== lastSourceClass) {
+            lastSourceClass = message.payload.source?.class;
+            playheadPosition.set(null);
+        }
     });
 
     await listen<Position>("Position", (message) => {

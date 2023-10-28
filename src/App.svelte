@@ -17,6 +17,7 @@
     // TODO:     Consider flow for starting weevibin without a vibin host set
     // TODO:     Research persisting app settings (vibin host; whether vibin host has been set or not)
     // TODO: XXX Improve display details when disconnected
+    // TODO:     Investigate using CSS's "filter: brightness(1.2);" for hover
     //
     // TODO: Rust:
     // TODO:    Look into controlling stop_reading()'s poll delay

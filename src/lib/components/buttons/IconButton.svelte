@@ -2,6 +2,8 @@
     import { IconQuestionMark } from "@tabler/icons-svelte";
     import tinycolor from "tinycolor2";
 
+    // TODO: Investigate using CSS's "filter: brightness(1.2);" for hover
+
     export let icon = IconQuestionMark;
     export let disabled: boolean = false;
     export let size: number = 20;

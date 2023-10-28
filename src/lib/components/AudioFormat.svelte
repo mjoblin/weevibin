@@ -12,6 +12,6 @@
 
 <style>
     .AudioFormat {
-        font-size: 9px;
+        font-size: 11px;
     }
 </style>
