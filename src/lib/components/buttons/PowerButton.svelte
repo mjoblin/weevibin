@@ -1,7 +1,7 @@
 <script lang="ts">
     import { IconPower } from "@tabler/icons-svelte";
 
-    import { vibinState } from "../../state.ts";
+    import { isConnected, vibinState } from "../../state.ts";
     import { powerOff, powerOn } from "../../vibinApi.ts";
     import IconButton from "./IconButton.svelte";
 
@@ -12,6 +12,7 @@
 </script>
 
 <IconButton
+    disabled={!$isConnected}
     icon={IconPower}
     size={18}
     backgroundColor={bgColor}

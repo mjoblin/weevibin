@@ -1,9 +1,11 @@
 <script lang="ts">
+    import tinycolor, { type ColorInput } from "tinycolor2";
+
     import { appState, type ConnectionStatus } from "../state.ts";
 
     export let hideIfConnected: boolean = true;
 
-    const statusColors: Record<ConnectionStatus, string> = {
+    const statusColors: Record<ConnectionStatus, ColorInput> = {
         Connected: "green",
         Connecting: "yellow",
         Disconnected: "red",
@@ -11,13 +13,24 @@
     }
 
     $: connectionStatus = $appState.vibin_connection.state;
-    $: cssVarStyles = `--status-color:${statusColors[connectionStatus] || "transparent"}`
+    $: statusDisplay =
+        connectionStatus === "Disconnected" ?
+            "Not connected"
+            : ["Connecting", "Disconnecting"].includes(connectionStatus) ?
+            `${connectionStatus}...`
+            : connectionStatus;
+    $: statusColor = statusColors[connectionStatus] || "gray";
+    $: statusColorBright = tinycolor(statusColor).lighten(30).toString();
+
+    $: cssVarStyles =
+        `--status-color:${statusColor};` +
+        `--status-color-bright:${statusColorBright}`;
 </script>
 
 {#if !hideIfConnected || connectionStatus !== "Connected"}
     <div class="WebSocketConnectionStatus" style={cssVarStyles}>
         <div class={"statusLight" + `${["Connecting", "Disconnecting"].includes(connectionStatus) ? " lightAnimation" : ""}`}></div>
-        <span class="statusText">{$appState.vibin_connection.state}</span>
+        <span class="statusText">{statusDisplay}</span>
     </div>
 {/if}
 
@@ -45,13 +58,15 @@
     @keyframes animateLight {
         0%, 100% {
             transform: scale(1);
+            background-color: var(--status-color);
         }
         50% {
             transform: scale(1.25);
+            background-color: var(--status-color-bright);
         }
     }
 
     .lightAnimation {
-        animation: animateLight 1s infinite;
+        animation: animateLight 1.5s infinite;
     }
 </style>

@@ -19,24 +19,26 @@
     /**
      * Convert a duration in seconds into "hh:mm:ss", without the hh: if it would have been "00:".
      */
-    const prettyDuration = (duration: number) =>
-        new Date(duration * 1000).toISOString().substring(11, 19).replace(leadingZeros, "");
+    const prettyDuration = (duration: number | undefined) =>
+        typeof duration === "number" ?
+            new Date(duration * 1000).toISOString().substring(11, 19).replace(leadingZeros, "")
+            : "--:--";
 </script>
 
 <div class="Playhead">
-    <span>{prettyDuration($playheadPosition || 0)}</span>
+    <span class="time">{prettyDuration($playheadPosition)}</span>
     <input
         style={cssVarStyles}
         class:canSeek={canSeek}
         disabled={!canSeek}
         type="range"
         min="0"
-        max={$vibinState.active_track?.duration || 0}
+        max={$vibinState.active_track?.duration}
         step="1"
         bind:value={$playheadPosition}
         on:click
     />
-    <span>{prettyDuration($vibinState.active_track?.duration || 0)}</span>
+    <span class="time">{prettyDuration($vibinState.active_track?.duration)}</span>
 </div>
 
 <style>
@@ -49,10 +51,10 @@
         padding-right: 5px;
     }
 
-    span {
-        font-size: 0.65rem;
+    .time {
+        font-size: 0.7em;
         color: #c3c3c3;
-        padding-top: 2px;
+        white-space: nowrap;
     }
 
     input[type="range"] {

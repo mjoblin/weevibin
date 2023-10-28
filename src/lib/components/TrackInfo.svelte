@@ -1,13 +1,26 @@
 <script lang="ts">
-    import { vibinState } from "../state.ts";
+    import { isConnected, vibinState } from "../state.ts";
+
+    $: artUrl = $vibinState.display.art_url;
+    $: haveDisplayDetails = $vibinState.display.line1 || $vibinState.display.line2 || $vibinState.display.line3;
 </script>
 
 <div class="TrackInfo">
-    <div class="art" style="background-image: url('{$vibinState.display.art_url}')" />
+    <div
+        class={"art" + `${!artUrl ? " art-unavailable" : ""}`}
+        style="background-image: url({artUrl})"
+    />
     <div class="details">
-        <span>{$vibinState.display.line1 || ""}</span>
-        <span>{$vibinState.display.line2 || ""}</span>
-        <span>{$vibinState.display.line3 || ""}</span>
+        {#if haveDisplayDetails}
+            <span class="details-line1">{$vibinState.display.line1 || ""}</span>
+            <span class="details-line2">{$vibinState.display.line2 || ""}</span>
+            <span class="details-line3">{$vibinState.display.line3 || ""}</span>
+        {:else}
+            <span class="details-line1">No track details</span>
+            {#if !$isConnected}
+                <span class="details-line2">Not connected to Vibin; configure in settings.</span>
+            {/if}
+        {/if}
     </div>
 </div>
 
@@ -38,6 +51,21 @@
         border-radius: 3px;
     }
 
+    .art-unavailable {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background-color: #414144;
+    }
+
+    .art-unavailable::after {
+        content: "no art";
+        text-transform: uppercase;
+        color: #a0a0a0;
+        font-size: 0.5em;
+        font-weight: 600;
+    }
+
     .details {
         display: flex;
         flex-direction: column;
@@ -53,16 +81,16 @@
             white-space: nowrap;
         }
 
-        & span:first-of-type {
+        & .details-line1 {
             font-weight: bold;
             font-size: 0.9em;
         }
 
-        & span:nth-of-type(2) {
+        & .details-line2 {
             font-size: 0.7em;
         }
 
-        & span:last-of-type {
+        & .details-line3 {
             color: #a0a0a0;
             font-size: 0.7em;
         }

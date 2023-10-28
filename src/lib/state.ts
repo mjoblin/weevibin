@@ -115,13 +115,17 @@ type Position = {
 
 type Screen = "main" | "settings";
 
+const DEFAULT_VIBIN_STATE = { display: {} };
+
 export let currentScreen = writable<Screen>("main");
 
 export let appErrorState = writable<AppError>();
 
-export let appState = writable<AppState>({ vibin_connection: "Disconnected" });
+export let appState = writable<AppState>({ vibin_connection: { state: "Disconnected" } });
 
-export let vibinState = writable<VibinState>({ display: {} });
+export let vibinState = writable<VibinState>(DEFAULT_VIBIN_STATE);
+
+export const isConnected = derived(appState, ($appState) => $appState.vibin_connection.state === "Connected");
 
 export const isPlaying = derived(vibinState, ($vibinState) => $vibinState.transport?.play_state === "play");
 
@@ -131,6 +135,11 @@ const initialize = async () => {
     await listen<AppState>("AppState", (message) => {
         console.log("AppState", message.payload);
         appState.set(message.payload);
+        playheadPosition.set(null);
+
+        if (message.payload.vibin_connection.state !== "Connected") {
+            vibinState.set(DEFAULT_VIBIN_STATE);
+        }
     });
 
     await listen<VibinState>("VibinState", (message) => {

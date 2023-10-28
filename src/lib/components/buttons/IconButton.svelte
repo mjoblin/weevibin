@@ -31,10 +31,7 @@
 
     $: backgroundColorHover =
         withBackground ? tinycolor(backgroundColor).darken(10).toString() : "#3e3e3e";
-
-    // $: padding = withBackground ? "6px 7px" : "3px 5px";
-    // $: padding = withBackground ? ".25em .25em" : "3px 5px";
-    // $: padding = withBackground ? ".35em .35em" : ".3em .3em";
+    $: backgroundColorDisabled = withBackground ? "#3e3e3e" : "transparent";
 
     let padding = ".3em .3em";
 
@@ -45,12 +42,16 @@
         `--color-max:${colorMax};` +
         `--background-color:${backgroundColor};` +
         `--background-color-hover:${backgroundColorHover};` +
+        `--background-color-disabled:${backgroundColorDisabled};` +
         `--padding:${padding};`;
 </script>
 
 <div>
     <button type="button" style={cssVarStyles} {disabled} on:click>
-        <svelte:component this={icon} {size}/>
+        <div class="button-content">
+            <svelte:component this={icon} {size}/>
+            <slot />
+        </div>
     </button>
 </div>
 
@@ -84,7 +85,14 @@
 
         &:disabled {
             color: var(--color-dim);
+            background-color: var(--background-color-disabled);
             cursor: not-allowed;
         }
+    }
+
+    .button-content {
+        display: flex;
+        align-items: center;
+        gap: 5px;
     }
 </style>

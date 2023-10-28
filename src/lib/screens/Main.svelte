@@ -1,7 +1,7 @@
 <script lang="ts">
     import { seek } from "../vibinApi.ts";
-    import MiscDetails from "../components/MiscDetails.svelte";
     import Playhead from "../components/Playhead.svelte";
+    import StatusLine from "../components/StatusLine.svelte";
     import TrackInfo from "../components/TrackInfo.svelte";
     import TransportControls from "../components/TransportControls.svelte";
     import VolumeControls from "../components/VolumeControls.svelte";
@@ -12,32 +12,32 @@
     }
 </script>
 
-<div class="Layout">
-    <div class="Playing">
+<div class="MainScreen">
+    <div class="now-playing">
         <TrackInfo />
         <VolumeControls />
     </div>
-    <div class="Controls">
+    <div class="playback-controls">
         <TransportControls />
         <Playhead on:click={handleSeek} />
     </div>
-    <MiscDetails />
+    <StatusLine />
 </div>
 
 <style>
-    .Layout {
+    .MainScreen {
         display: flex;
         flex-direction: column;
     }
 
-    .Playing {
+    .now-playing {
         width: 100%;
         display: flex;
         flex-direction: row;
         justify-content: space-between;
     }
 
-    .Controls {
+    .playback-controls {
         display: flex;
         flex-direction: row;
         gap: 10px;
