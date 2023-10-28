@@ -8,14 +8,11 @@
         IconVolumeOff
     } from "@tabler/icons-svelte";
 
-    import { vibinState } from "../state.ts";
+    import { isPowerOn, vibinState } from "../state.ts";
     import { toggleMute, volumeDown, volumeSet, volumeUp } from "../vibinApi.ts";
     import Arc from "./Arc.svelte";
     import IconButton from "./buttons/IconButton.svelte";
     import ToggleButton from "./buttons/ToggleButton.svelte";
-
-    // Approach to drawing the arc:
-    // http://www.independent-software.com/drawing-progress-arc-in-pure-css-using-skewed-rectangles.html
 
     const bigVolumeChangeAmount = 0.05;
 
@@ -27,7 +24,7 @@
     $: volumeBigDown = Math.max(volume - bigVolumeChangeAmount, 0.0);
 </script>
 
-{#if $vibinState.amplifier}
+{#if $vibinState.amplifier && $isPowerOn}
     <div class="Volume">
         <ToggleButton
             icon={$vibinState.amplifier.mute === "off" ? IconVolume : IconVolumeOff}

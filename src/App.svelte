@@ -10,12 +10,12 @@
     // TODO:     Consider root font size, and replace any "rem" with "em"
     // TODO: XXX Rename <MiscDetails>
     // TODO:     Different colors for different audio sources
-    // TODO:     Improve display of stream codec
+    // TODO: XXX Improve display of stream codec
     // TODO: XXX Implement <Settings>
     // TODO:     What is the TypeScript type for Tabler icons
-    // TODO:     Decide how to show connection status on <Main> (only show if not "Connected"?)
-    // TODO:     Consider flow for starting weevibin without a vibin host set
+    // TODO: XXX Decide how to show connection status on <Main> (only show if not "Connected"?)
     // TODO:     Research persisting app settings (vibin host; whether vibin host has been set or not)
+    // TODO:     Consider flow for starting weevibin without a vibin host set
     // TODO: XXX Improve display details when disconnected
     // TODO:     Investigate using CSS's "filter: brightness(1.2);" for hover
     //

@@ -125,6 +125,8 @@ export let appState = writable<AppState>({ vibin_connection: { state: "Disconnec
 
 export let vibinState = writable<VibinState>(DEFAULT_VIBIN_STATE);
 
+export const isPowerOn = derived(vibinState, ($vibinState) => $vibinState.power === "on");
+
 export const isConnected = derived(appState, ($appState) => $appState.vibin_connection.state === "Connected");
 
 export const isPlaying = derived(vibinState, ($vibinState) => $vibinState.transport?.play_state === "play");
@@ -135,7 +137,7 @@ let lastSourceClass: SourceClass | undefined = undefined;
 
 const initialize = async () => {
     await listen<AppState>("AppState", (message) => {
-        console.log("AppState", message.payload);
+        // console.log("AppState", message.payload);
         appState.set(message.payload);
         playheadPosition.set(null);
 
@@ -145,6 +147,7 @@ const initialize = async () => {
     });
 
     await listen<VibinState>("VibinState", (message) => {
+        // console.log("VibinState", message.payload);
         vibinState.set(message.payload);
 
         if (message.payload.source?.class !== lastSourceClass) {
@@ -158,8 +161,8 @@ const initialize = async () => {
     });
 
     await listen<AppError>("Error", (message) => {
+        // console.log("Error", message.payload);
         appErrorState.set(message.payload);
-        console.log("Error", message.payload);
     });
 
     await invoke("on_ui_ready");
