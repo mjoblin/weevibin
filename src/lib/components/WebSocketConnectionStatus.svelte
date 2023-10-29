@@ -29,27 +29,26 @@
 
 {#if !hideIfConnected || connectionStatus !== "Connected"}
     <div class="WebSocketConnectionStatus" style={cssVarStyles}>
-        <div class={"statusLight" + `${["Connecting", "Disconnecting"].includes(connectionStatus) ? " lightAnimation" : ""}`}></div>
-        <span class="statusText">{statusDisplay}</span>
+        <div class={"status-light" + `${["Connecting", "Disconnecting"].includes(connectionStatus) ? " light-animation" : ""}`}></div>
+        <span class="status-text">{statusDisplay}</span>
     </div>
 {/if}
 
 <style>
     .WebSocketConnectionStatus {
         display: flex;
-        flex-direction: row;
-        gap: 5px;
+        gap: 0.6em;
         align-items: center;
-        color: #9e9e9e;
+        color: var(--text-dim);
 
-        & .statusLight {
+        & .status-light {
             border-radius: 50%;
             width: 0.7em;
             height: 0.7em;
             background-color: var(--status-color);
         }
 
-        & .statusText {
+        & .status-text {
             text-transform: lowercase;
             font-size: 0.8em;
         }
@@ -66,7 +65,7 @@
         }
     }
 
-    .lightAnimation {
+    .light-animation {
         animation: animateLight 1.5s infinite;
     }
 </style>

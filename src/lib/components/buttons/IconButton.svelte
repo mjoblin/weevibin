@@ -2,6 +2,8 @@
     import { IconQuestionMark } from "@tabler/icons-svelte";
     import tinycolor from "tinycolor2";
 
+    import { colorFromCssVar } from "../../utils.ts";
+
     // TODO: Investigate using CSS's "filter: brightness(1.2);" for hover
 
     export let icon = IconQuestionMark;
@@ -11,29 +13,33 @@
     export var color: string | undefined = undefined;
     export var backgroundColor: string | undefined = undefined;
 
+    let textDim = colorFromCssVar("--text-dim");
+    let textMax = colorFromCssVar("--text-max");
+    let accentColorBright = colorFromCssVar("--accent-color-bright");
+    let backgroundDim = colorFromCssVar("--background-dim");
+
     // TODO: Why doesn't the following work?
-    // $: color = color ?? withBackground ? "#ffffff" : "#a6a7ab";
+    // $: color = color ?? withBackground ? textMax : textDim;
     $: {
         if (typeof color === "undefined") {
-            color = withBackground ? "#ffffff" : "#a6a7ab";
+            color = withBackground ? textMax : textDim;
         }
     }
 
-    // $: backgroundColor = backgroundColor ?? withBackground ? "#1872c2" : "transparent";
     $: {
         if (typeof backgroundColor === "undefined") {
-            backgroundColor = withBackground ? "#1872c2" : "transparent";
+            backgroundColor = withBackground ? accentColorBright : "transparent";
         }
     }
 
-    let colorMax = "#ffffff";
+    let colorMax = textMax;
 
     $: colorDim = tinycolor(color).darken(20).toString();
     $: colorBright = tinycolor(color).lighten(20).toString();
 
     $: backgroundColorHover =
-        withBackground ? tinycolor(backgroundColor).darken(10).toString() : "#3e3e3e";
-    $: backgroundColorDisabled = withBackground ? "#3e3e3e" : "transparent";
+        withBackground ? tinycolor(backgroundColor).darken(10).toString() : backgroundDim;
+    $: backgroundColorDisabled = withBackground ? backgroundDim : "transparent";
 
     let padding = ".3em .3em";
 

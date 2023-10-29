@@ -6,9 +6,7 @@
     import IconButton from "./IconButton.svelte";
 
     $: isSystemOn = $vibinState.power === "on";
-    $: bgColor = isSystemOn ? "#c92333" : "#1872c2";
-    $: console.log("ON", isSystemOn);
-    $: console.log("BG", bgColor);
+    $: bgColor = isSystemOn ? "#e92333" : "#0862b2";  // TODO: --alert-color and --accent-color
 </script>
 
 <IconButton

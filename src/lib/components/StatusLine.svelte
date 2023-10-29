@@ -6,7 +6,7 @@
     import WebSocketConnectionStatus from "./WebSocketConnectionStatus.svelte";
 </script>
 
-<div class="MiscState">
+<div class="StatusLine">
     <div class="lhs">
         <AudioSource />
         <AudioFormat />
@@ -20,25 +20,21 @@
 </div>
 
 <style>
-    .MiscState {
+    .StatusLine {
         display: flex;
-        gap: 10px;
         font-size: 0.8em;
-        color: #9e9e9e;
         justify-content: space-between;
     }
 
     .lhs {
         display: flex;
-        flex-direction: row;
         align-items: center;
-        gap: 10px;
+        gap: 1em;
     }
 
     .rhs {
         display: flex;
-        flex-direction: row;
         align-items: center;
-        gap: 10px;
+        gap: 1em;
     }
 </style>

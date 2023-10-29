@@ -3,16 +3,16 @@
     import Badge from "./Badge.svelte";
 
     const sourceClassColor: Record<SourceClass, string> = {
-        "digital.coax": "--brown",
-        "digital.toslink": "--brown",
-        "digital.usb": "--brown",
-        "stream.media": "--blue",
-        "stream.radio": "--orange",
-        "stream.service.airplay": "--green",
-        "stream.service.cast": "--brown",
-        "stream.service.roon": "--brown",
-        "stream.service.spotify": "--brown",
-        "stream.service.tidal": "--brown",
+        "digital.coax": "--goldenrod",
+        "digital.toslink": "--sea-green",
+        "digital.usb": "--robin-egg-blue",
+        "stream.media": "--cerulean",
+        "stream.radio": "--tomato",
+        "stream.service.airplay": "--moss-green",
+        "stream.service.cast": "--burnt-umber",
+        "stream.service.roon": "--rose-quartz",
+        "stream.service.spotify": "--taupe-gray",
+        "stream.service.tidal": "--space-cadet",
     }
 
     // The "source" is the streamer's current input (AirPlay, local media, internet radio, etc); and
@@ -26,7 +26,7 @@
 
 {#if sourceDescription}
     <Badge color={sourceClass ? sourceClassColor[sourceClass] : "gray"}>
-        <div class="sourceDetails">
+        <div class="AudioSource">
             <span>{sourceDescription}</span>
             {#if playbackSourceDisplay}
                 <span style="font-weight: bold">{playbackSourceDisplay}</span>
@@ -36,9 +36,8 @@
 {/if}
 
 <style>
-    .sourceDetails {
+    .AudioSource {
         display: flex;
-        flex-direction: row;
         gap: 0.6em;
     }
 </style>

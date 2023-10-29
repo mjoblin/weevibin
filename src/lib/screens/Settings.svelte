@@ -48,14 +48,13 @@
         <IconButton
             icon={IconArrowLeft}
             size={18}
-            color="#d3d3d3"
             on:click={() => $currentScreen = "main"}
         >
             back
         </IconButton>
     </div>
 
-    <div style="display: flex; flex-direction: row; gap: 10px">
+    <div style="display: flex; gap: 10px">
         <div style="display: flex; align-items: flex-end; gap: 10px">
             <label>Vibin host
                 <input type="text" autofocus bind:value={vibinServer} on:keydown={handleKeyDown}/>
@@ -91,7 +90,8 @@
 
     .error {
         margin-top: 10px;
-        color: #f32323;
+        font-weight: bold;
+        color: var(--alert-color);
     }
 
     @keyframes growShrinkAnimation {
@@ -101,12 +101,5 @@
         50% {
             transform: scale(1.1);
         }
-    }
-
-    button:disabled {
-        background-color: dimgrey;
-        border-color: dimgrey;
-        color: #c0c0c0;
-        cursor: not-allowed;
     }
 </style>

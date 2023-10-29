@@ -31,8 +31,7 @@
 
     .TrackInfo {
         display: flex;
-        flex-direction: row;
-        gap: 10px;
+        gap: 0.7em;
         align-items: center;
         max-width: 100%;
         padding: 3px;
@@ -55,13 +54,13 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        background-color: #414144;
+        background-color: var(--background-mid);
     }
 
     .art-unavailable::after {
         content: "no art";
         text-transform: uppercase;
-        color: #a0a0a0;
+        color: var(--text-dim);
         font-size: 0.5em;
         font-weight: 600;
     }
@@ -70,7 +69,7 @@
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        padding-right: 5px;
+        padding-right: 0.3em;
         white-space: nowrap;
 
         & span {
@@ -82,7 +81,7 @@
         }
 
         & .details-line1 {
-            font-weight: bold;
+            font-weight: 600;
             font-size: 0.9em;
         }
 
@@ -91,7 +90,7 @@
         }
 
         & .details-line3 {
-            color: #a0a0a0;
+            color: var(--text-dim);
             font-size: 0.7em;
         }
     }

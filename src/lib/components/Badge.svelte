@@ -1,22 +1,22 @@
 <script lang="ts">
     import tinycolor from "tinycolor2";
 
-    export let color = "#333b72";
+    import { colorFromCssVar } from "../utils.ts";
+
+    export let color = colorFromCssVar("--accent-color");
 
     // Defaults.
     let backgroundColor = color;
-    let foregroundColor = "#f0f0f0";
+    let foregroundColor = colorFromCssVar("--text-max")
     let badgeLuminance = 0.5;
 
     $: if (color.startsWith("--")) {
-        // The color is a --css-variable, so get its value.
-        const computedStyles = getComputedStyle(document.body);
-        backgroundColor = computedStyles.getPropertyValue(color) || "gray";
+        backgroundColor = colorFromCssVar(color) || "gray";
     }
 
     // Have the foreground be light or dark based on background luminance
     $: badgeLuminance = tinycolor(backgroundColor).getLuminance();
-    $: foregroundColor = badgeLuminance < 0.3 ? "#f3f3f3" : "#090909";
+    $: foregroundColor = badgeLuminance < 0.3 ? foregroundColor : colorFromCssVar("--text-min");
 
     $: cssVarStyles = `--color:${backgroundColor};--text-color:${foregroundColor}`;
 </script>
@@ -27,16 +27,16 @@
 
 <style>
     .Badge {
-        height: 1rem;
-        padding: 0 7px;
-        font-size: 8px;
+        height: 2em;
+        padding: 0 1em;
+        font-size: 0.65em;
         font-weight: 500;
         background-color: var(--color);
-        border-radius: 2rem;
+        border-radius: 100vh; /* Large border-radius forces 50% of container height */
         text-transform: uppercase;
         justify-content: center;
         align-items: center;
-        line-height: 1.1rem;
+        line-height: 2.1em;
         color: var(--text-color);
     }
 </style>

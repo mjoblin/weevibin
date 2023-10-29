@@ -49,12 +49,12 @@
 </script>
 
 <div class="Arc" style={cssVarStyles}>
-    <svg class="arcSvg" xmlns="http://www.w3.org/2000/svg">
-        <path class="arcTrack" d={describeArc(arcCenterSVG, arcCenterSVG, radiusSVG, 0, MAX_PROGRESS)} />
-        <path class="arcProgress" d={describeArc(arcCenterSVG, arcCenterSVG, radiusSVG, 0, progressDisplay)} />
+    <svg class="arc-svg" xmlns="http://www.w3.org/2000/svg">
+        <path class="arc-track" d={describeArc(arcCenterSVG, arcCenterSVG, radiusSVG, 0, MAX_PROGRESS)} />
+        <path class="arc-progress" d={describeArc(arcCenterSVG, arcCenterSVG, radiusSVG, 0, progressDisplay)} />
     </svg>
 
-    <div class="arcContent">
+    <div class="arc-content">
         <slot />
     </div>
 </div>
@@ -65,7 +65,7 @@
         height: var(--arc-container-size);
         position: relative;
 
-        & .arcSvg {
+        & .arc-svg {
             width: 100%;
             height: 100%;
             stroke-width: var(--thickness);
@@ -73,17 +73,17 @@
         }
     }
 
-    .arcTrack {
+    .arc-track {
         stroke: var(--track-color);
         fill: none;
     }
 
-    .arcProgress {
+    .arc-progress {
         stroke: var(--progress-color);
         fill: none;
     }
 
-    .arcContent {
+    .arc-content {
         position: absolute;
         top: 0;
         left: 0;

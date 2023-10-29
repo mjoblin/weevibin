@@ -82,7 +82,7 @@
     />
 
     <!-- Repeat and Shuffle toggles -->
-    <div class="Toggles">
+    <div class="toggles">
         <ToggleButton
             isOn={$vibinState.transport?.repeat === "all"}
             icon={IconRepeat}
@@ -101,11 +101,10 @@
 <style>
     .TransportControls {
         display: flex;
-        flex-direction: row;
         align-items: center;
     }
 
-    .Toggles {
+    .toggles {
         display: flex;
         flex-direction: column;
     }

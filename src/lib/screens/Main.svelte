@@ -31,15 +31,13 @@
     }
 
     .now-playing {
-        width: 100%;
         display: flex;
-        flex-direction: row;
+        width: 100%;
         justify-content: space-between;
     }
 
     .playback-controls {
         display: flex;
-        flex-direction: row;
         gap: 10px;
         width: 100%;
         align-content: center;

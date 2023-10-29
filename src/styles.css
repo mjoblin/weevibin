@@ -2,28 +2,18 @@
 
 :root {
     font-family: Inter, Avenir, Helvetica, Arial, sans-serif;
-    font-size: var(--font-size-root);
-    line-height: 24px;
-    font-weight: 400;
+    font-size: var(--root-font-size);
+    line-height: var(--root-line-height);
+    font-weight: var(--root-font-weight);
 
-    color: #0f0f0f;
-    background-color: #f6f6f6;
+    color: var(--root-color);
+    background-color: var(--root-background-color);
 
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-text-size-adjust: 100%;
-}
-
-a {
-    font-weight: 500;
-    color: #646cff;
-    text-decoration: inherit;
-}
-
-a:hover {
-    color: #535bf2;
 }
 
 h1 {
@@ -40,52 +30,32 @@ button {
     font-size: 1em;
     font-weight: 500;
     font-family: inherit;
-    color: #0f0f0f;
-    background-color: #ffffff;
+    color: var(--root-color);
+    background-color: var(--dark);
     transition: border-color 0.25s, background-color 0.25s, color 0.25s;
 }
 
 button {
     cursor: pointer;
+    background-color: var(--accent-color);
 }
 
 button:hover {
-    border-color: #396cd8;
+    color: var(--text-max);
+    background-color: var(--accent-color-bright);
 }
 
 button:active {
-    border-color: #396cd8;
-    background-color: #e8e8e8;
+    border-color: var(--accent-color-dim);
 }
 
-@media (prefers-color-scheme: dark) {
-    :root {
-        color: #f6f6f6;
-        /*background-color: #2f2f2f;*/
-        background-color: #23272A;
-    }
+button:disabled {
+    background-color: dimgrey;
+    border-color: dimgrey;
+    color: var(--text-mid);
+    cursor: not-allowed;
+}
 
-    a:hover {
-        color: #24c8db;
-    }
-
-    input,
-    button {
-        color: #e9e9e9;
-        background-color: #0f0f0f98;
-    }
-
-    button {
-        background-color: #1972c2;
-    }
-
-    button:active {
-        background-color: #0f0f0f69;
-        border-color: #9393f3;
-    }
-
-    button:hover {
-        color: #ffffff;
-        background-color: #0862b2;
-    }
+/* No current support for the light color scheme */
+@media (prefers-color-scheme: light) {
 }

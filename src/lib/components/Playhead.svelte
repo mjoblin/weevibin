@@ -1,13 +1,14 @@
 <script lang="ts">
     import { playheadPosition, vibinState } from "../state.ts";
+    import { colorFromCssVar } from "../utils.ts";
 
     $: progress = $playheadPosition && $vibinState.active_track?.duration ?
         ($playheadPosition / $vibinState.active_track.duration) * 100 : 0;
 
     $: canSeek = $vibinState.transport?.active_controls.includes("seek");
 
-    $: progressColor = canSeek ? "#1972c2" : "#6c6f76";
-    $: progressRemainingColor = "#41444a";
+    $: progressColor = canSeek ? colorFromCssVar("--accent-color-bright") : "#6c6f76";
+    $: progressRemainingColor = colorFromCssVar("--background-mid");
 
     $: cssVarStyles =
         `--progress:${progress}%;` +
@@ -29,7 +30,7 @@
     <span class="time">{prettyDuration($playheadPosition)}</span>
     <input
         style={cssVarStyles}
-        class:canSeek={canSeek}
+        class:can-seek={canSeek}
         disabled={!canSeek}
         type="range"
         min="0"
@@ -45,15 +46,13 @@
     .Playhead {
         flex-grow: 1;
         display: flex;
-        flex-direction: row;
         align-items: center;
         gap: 5px;
-        padding-right: 5px;
     }
 
     .time {
         font-size: 0.7em;
-        color: #c3c3c3;
+        color: var(--text-mid);
         white-space: nowrap;
     }
 
@@ -84,7 +83,7 @@
         border: none;
     }
 
-    .canSeek {
+    .can-seek {
         & {
             cursor: pointer;
         }
@@ -94,7 +93,7 @@
             height: 10px;
             width: 4px;
             border-radius: 2px;
-            background: #e3e3e3;
+            background: var(--root-color);
             transition: background .3s ease-in-out;
         }
 
