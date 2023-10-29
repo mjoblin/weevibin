@@ -5,11 +5,11 @@
     import Main from "./lib/screens/Main.svelte";
 
     // TODO: UI:
-    // TODO:     Create constants (colors, etc)
-    // TODO:     Clean up top-level styles.css
-    // TODO:     Consider root font size, and replace any "rem" with "em"
+    // TODO: XXX Create constants (colors, etc)
+    // TODO: XXX Clean up top-level styles.css
+    // TODO: XXX Consider root font size, and replace any "rem" with "em"
     // TODO: XXX Rename <MiscDetails>
-    // TODO:     Different colors for different audio sources
+    // TODO: XXX Different colors for different audio sources
     // TODO: XXX Improve display of stream codec
     // TODO: XXX Implement <Settings>
     // TODO:     What is the TypeScript type for Tabler icons
