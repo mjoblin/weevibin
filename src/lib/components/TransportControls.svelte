@@ -19,7 +19,7 @@
         stop,
         toggleRepeat,
         toggleShuffle,
-    } from "../vibinApi.ts";
+    } from "../vibin_api.ts";
     import IconButton from "./buttons/IconButton.svelte";
     import ToggleButton from "./buttons/ToggleButton.svelte";
 

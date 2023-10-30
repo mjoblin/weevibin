@@ -1,5 +1,7 @@
 import { invoke } from "@tauri-apps/api/tauri";
 
+import { DEFAULT_VIBIN_PORT } from "./consts.ts";
+
 /**
  * Request (from Rust) a connection to the Vibin WebSocket server at `host`.
  *
@@ -9,7 +11,7 @@ import { invoke } from "@tauri-apps/api/tauri";
  */
 export const connectToVibin = async (host: string) => {
     const wsUrl = new URL(`${/^wss?:\/\//.test(host) ? "" : "ws://"}${host}`);
-    wsUrl.port = wsUrl.port ? wsUrl.port : "8080";
+    wsUrl.port = wsUrl.port ? wsUrl.port : `${DEFAULT_VIBIN_PORT}`;
     wsUrl.pathname = wsUrl.pathname === "/" ? "/ws" : wsUrl.pathname;
 
     await invoke("set_vibin_server", { vibinServer: wsUrl });

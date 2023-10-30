@@ -2,6 +2,16 @@ import { derived, writable } from "svelte/store";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/tauri";
 
+import type {
+    ActiveTrack,
+    Amplifier,
+    Position,
+    Power,
+    Source,
+    SourceClass,
+    StreamerDisplay,
+    Transport
+} from "./vibin_types.ts";
 import {
     type VibinHostDetails,
     getPersistedVibinHostDetails,
@@ -9,10 +19,13 @@ import {
     setPersistedVibinHost,
 } from "./persisted_state.ts";
 
-// These are the TypeScript equivalents of the Rust structs defined in src-tauri/src/state.rs
+// UI application screens
+type Screen = "main" | "settings";
 
+// State of the Rust WebSocket connection to the Vibin backend
 export type ConnectionStatus = "Connected" | "Connecting" | "Disconnected" | "Disconnecting";
 
+// weevibin application state
 type AppState = {
     vibin_connection: {
         state: ConnectionStatus;
@@ -27,87 +40,8 @@ type AppError = {
     message: string;
 };
 
-type Power = "on" | "off";
-
-type PlayStatus =
-    | "buffering"
-    | "connecting"
-    | "no_signal"
-    | "not_ready"
-    | "pause"
-    | "play"
-    | "ready"
-    | "stop";
-
-export type TransportAction =
-    | "next"
-    | "pause"
-    | "play"
-    | "previous"
-    | "repeat"
-    | "seek"
-    | "shuffle"
-    | "stop"
-    | "toggle_playback";
-
-type RepeatState = "off" | "all";
-
-type ShuffleState = "off" | "all";
-
-export type SourceClass =
-    "digital.coax" |
-    "digital.toslink" |
-    "digital.usb" |
-    "stream.media" |
-    "stream.radio" |
-    "stream.service.airplay" |
-    "stream.service.cast" |
-    "stream.service.roon" |
-    "stream.service.spotify" |
-    "stream.service.tidal";
-
-type Source = {
-    id: string;
-    name: string;
-    default_name: string;
-    class: SourceClass;
-    nameable: boolean;
-    ui_selectable: boolean;
-    description: string;
-    description_locale: string;
-    preferred_order: number;
-};
-
-type ActiveTrack = {
-    title: string;
-    artist: string;
-    album: string;
-    art_url: string;
-    duration: number;
-}
-
-type Amplifier = {
-    mute?: Power,
-    volume?: number,
-}
-
-type StreamerDisplay = {
-    line1?: string,
-    line2?: string,
-    line3?: string,
-    format?: string,
-    playback_source?: string,
-    art_url?: string,
-}
-
-type Transport = {
-    play_state: PlayStatus,
-    active_controls: TransportAction[],
-    repeat: RepeatState,
-    shuffle: ShuffleState,
-}
-
-type VibinState = {
+// All known state information from the Vibin backend
+export type VibinState = {
     power?: Power,
     amplifier?: Amplifier,
     display: StreamerDisplay,
@@ -116,23 +50,23 @@ type VibinState = {
     active_track?: ActiveTrack,
 }
 
-type Position = {
-    position: number,
-}
-
-type Screen = "main" | "settings";
+// ------------------------------------------------------------------------------------------------
+// Exported Svelte state
+// ------------------------------------------------------------------------------------------------
 
 const DEFAULT_VIBIN_STATE = { display: {} };
 
-export let uiInitialized = writable<boolean>(false);
-
 export let currentScreen = writable<Screen>("main");
+
+export let uiInitialized = writable<boolean>(false);
 
 export let appErrorState = writable<AppError>();
 
 export let appState = writable<AppState>({ vibin_connection: { state: "Disconnected" } });
 
 export let vibinState = writable<VibinState>(DEFAULT_VIBIN_STATE);
+
+export let playheadPosition = writable<number | null>(null);
 
 /**
  * Create a Svelte writable which wraps the persisted Vibin host details.
@@ -161,7 +95,7 @@ export const isConnected = derived(appState, ($appState) => $appState.vibin_conn
 
 export const isPlaying = derived(vibinState, ($vibinState) => $vibinState.transport?.play_state === "play");
 
-export let playheadPosition = writable<number | null>(null);
+// ------------------------------------------------------------------------------------------------
 
 // Track the last seen audio source
 let lastSeenSourceClass: SourceClass | undefined = undefined;

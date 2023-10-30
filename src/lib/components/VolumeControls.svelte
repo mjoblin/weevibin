@@ -9,7 +9,7 @@
     } from "@tabler/icons-svelte";
 
     import { isPowerOn, vibinState } from "../state.ts";
-    import { toggleMute, volumeDown, volumeSet, volumeUp } from "../vibinApi.ts";
+    import { toggleMute, volumeDown, volumeSet, volumeUp } from "../vibin_api.ts";
     import { colorFromCssVar } from "../utils.ts";
     import Arc from "./Arc.svelte";
     import IconButton from "./buttons/IconButton.svelte";

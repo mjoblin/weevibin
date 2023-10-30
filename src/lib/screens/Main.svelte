@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { seek } from "../vibinApi.ts";
+    import { seek } from "../vibin_api.ts";
     import Playhead from "../components/Playhead.svelte";
     import StatusLine from "../components/StatusLine.svelte";
     import TrackInfo from "../components/TrackInfo.svelte";

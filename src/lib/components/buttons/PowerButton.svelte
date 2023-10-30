@@ -2,7 +2,7 @@
     import { IconPower } from "@tabler/icons-svelte";
 
     import { isConnected, vibinState } from "../../state.ts";
-    import { powerOff, powerOn } from "../../vibinApi.ts";
+    import { powerOff, powerOn } from "../../vibin_api.ts";
     import IconButton from "./IconButton.svelte";
 
     $: isSystemOn = $vibinState.power === "on";

@@ -1,6 +1,26 @@
+import { DEFAULT_VIBIN_PORT } from "./consts.ts";
+import { vibinHost } from "./state.ts";
+
+let host: string | null = null;
+
+vibinHost.subscribe((hostDetails) => {
+    const hostName = hostDetails.host;
+
+    if (/:[0-9]+$/.test(hostName)) {
+        // Port override already specified
+        host = hostName;
+    } else {
+        host = `http://${hostName}:${DEFAULT_VIBIN_PORT}`;
+    }
+});
+
 export const sendVibinCommand = async (endpoint: string) => {
+    if (!host) {
+        return;
+    }
+
     const response = await fetch(
-        `http://192.168.2.101:8080/api${endpoint}`,
+        `${host}/api${endpoint}`,
         {
             method: "POST",
         }
@@ -8,12 +28,10 @@ export const sendVibinCommand = async (endpoint: string) => {
 }
 
 // System
-
 export const powerOn = async () => await sendVibinCommand("/system/power/on");
 export const powerOff = async () => await sendVibinCommand("/system/power/off");
 
 // Transport
-
 export const togglePlayback = async () => await sendVibinCommand("/transport/toggle_playback");
 export const nextTrack = async () => await sendVibinCommand("/transport/next");
 export const pause = async () => await sendVibinCommand("/transport/pause");
