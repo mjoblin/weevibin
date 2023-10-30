@@ -26,18 +26,7 @@
     }
 
     // TODO: UI:
-    // TODO: XXX Create constants (colors, etc)
-    // TODO: XXX Clean up top-level styles.css
-    // TODO: XXX Consider root font size, and replace any "rem" with "em"
-    // TODO: XXX Rename <MiscDetails>
-    // TODO: XXX Different colors for different audio sources
-    // TODO: XXX Improve display of stream codec
-    // TODO: XXX Implement <Settings>
     // TODO:     What is the TypeScript type for Tabler icons
-    // TODO: XXX Decide how to show connection status on <Main> (only show if not "Connected"?)
-    // TODO: XXX Research persisting app settings (vibin host; whether vibin host has been set or not)
-    // TODO: XXX Consider flow for starting weevibin without a vibin host set
-    // TODO: XXX Improve display details when disconnected
     // TODO:     Investigate using CSS's "filter: brightness(1.2);" for hover
     //
     // TODO: Rust:
