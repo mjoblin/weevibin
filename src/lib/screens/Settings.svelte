@@ -1,12 +1,12 @@
 <script lang="ts">
     import { IconArrowLeft } from "@tabler/icons-svelte";
-    import { invoke } from "@tauri-apps/api/tauri";
 
-    import { appState, currentScreen } from "../state.ts";
+    import { appState, currentScreen, vibinHost } from "../state.ts";
+    import { connectToVibin } from "../utils.ts";
     import IconButton from "../components/buttons/IconButton.svelte";
     import WebSocketConnectionStatus from "../components/WebSocketConnectionStatus.svelte";
 
-    let vibinServer = "192.168.2.101:8080";
+    let vibinHostNameSetting = $vibinHost.host;
 
     // There are two error sources:
     //  1. Errors coming from invoking set_vibin_server() on the Rust side.
@@ -19,23 +19,25 @@
     // There are two phases of vibin server setting -- invoking the set change request from the
     // Rust side; and then waiting for connection status updates via appState. If the connection
     // state is not "Connected" or "Disconnected" then we consider it to be in a processing state.
-    let isInvokingSetServer = false;
+    let isInvokingConnectRequest = false;
     $: isConnectionStateProcessing = !["Connected", "Disconnected"].includes($appState.vibin_connection.state);
 
     const setVibinServer = async () => {
-        isInvokingSetServer = true;
+        if (!vibinHostNameSetting) {
+            return;
+        }
+
+        await vibinHost.setHostName(vibinHostNameSetting);
+
+        isInvokingConnectRequest = true;
         error = undefined;
 
-        const wsUrl = new URL(`${/^wss?:\/\//.test(vibinServer) ? "" : "ws://"}${vibinServer}`);
-        wsUrl.port = wsUrl.port ? wsUrl.port : "8080";
-        wsUrl.pathname = wsUrl.pathname === "/" ? "/ws" : wsUrl.pathname;
-
         try {
-            await invoke("set_vibin_server", { vibinServer: wsUrl });
+            await connectToVibin(vibinHostNameSetting);
         } catch (e) {
             error = `${e}`;
         } finally {
-            isInvokingSetServer = false;
+            isInvokingConnectRequest = false
         }
     }
 
@@ -50,18 +52,18 @@
             size={18}
             on:click={() => $currentScreen = "main"}
         >
-            back
+            main
         </IconButton>
     </div>
 
     <div style="display: flex; gap: 10px">
         <div style="display: flex; align-items: flex-end; gap: 10px">
             <label>Vibin host
-                <input type="text" autofocus bind:value={vibinServer} on:keydown={handleKeyDown}/>
+                <input type="text" autofocus bind:value={vibinHostNameSetting} on:keydown={handleKeyDown}/>
             </label>
             <div style="display: flex; gap: 30px">
                 <button
-                    disabled={isInvokingSetServer || isConnectionStateProcessing}
+                    disabled={isInvokingConnectRequest || isConnectionStateProcessing}
                     on:click={setVibinServer}
                 >
                     Connect

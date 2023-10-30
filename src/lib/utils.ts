@@ -1,3 +1,20 @@
+import { invoke } from "@tauri-apps/api/tauri";
+
+/**
+ * Request (from Rust) a connection to the Vibin WebSocket server at `host`.
+ *
+ * This only gets as far as invoking set_vibin_server, which will return _before_ the connection
+ * attempt completes on the Rust side. This means that the success/failure of the connection
+ * attempt will not be known until later (via AppState.vibin_connection.state).
+ */
+export const connectToVibin = async (host: string) => {
+    const wsUrl = new URL(`${/^wss?:\/\//.test(host) ? "" : "ws://"}${host}`);
+    wsUrl.port = wsUrl.port ? wsUrl.port : "8080";
+    wsUrl.pathname = wsUrl.pathname === "/" ? "/ws" : wsUrl.pathname;
+
+    await invoke("set_vibin_server", { vibinServer: wsUrl });
+}
+
 /**
  * Get the color value for the given cssVarName.
  *

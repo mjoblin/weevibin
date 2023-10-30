@@ -13,6 +13,7 @@
     "dependencies": {
         "@tabler/icons-svelte": "^2.39.0",
         "@tauri-apps/api": "^1.5.0",
+        "tauri-plugin-store-api": "github:tauri-apps/tauri-plugin-store#v1",
         "tinycolor2": "^1.6.0"
     },
     "devDependencies": {

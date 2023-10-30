@@ -3,11 +3,11 @@
     import Badge from "./Badge.svelte";
 
     const sourceClassColor: Record<SourceClass, string> = {
-        "digital.coax": "--goldenrod",
+        "digital.coax": "--tomato",
         "digital.toslink": "--sea-green",
         "digital.usb": "--robin-egg-blue",
         "stream.media": "--cerulean",
-        "stream.radio": "--tomato",
+        "stream.radio": "--goldenrod",
         "stream.service.airplay": "--moss-green",
         "stream.service.cast": "--burnt-umber",
         "stream.service.roon": "--rose-quartz",

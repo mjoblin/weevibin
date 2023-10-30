@@ -5,6 +5,8 @@
     --root-color: #f6f6f6;
     --root-background-color: #23272A;
 
+    --app-padding: 5px;
+
     /* Text colors */
     --text-normal: var(--root-color);
     --text-mid: #c3c3c3;

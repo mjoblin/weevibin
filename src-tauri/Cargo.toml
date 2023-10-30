@@ -16,6 +16,7 @@ tauri-build = { version = "1.5", features = [] }
 futures = { version = "0.3.28", features = [] }
 futures-util = "0.3.28"
 tauri = { version = "1.5", features = ["shell-open"] }
+tauri-plugin-store = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1.32.0", features = ["full"] }

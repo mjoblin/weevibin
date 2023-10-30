@@ -9,11 +9,6 @@ use tauri::Manager;
 use weevibin::state::{AppState, AppStateMutex, Message, VibinState, VibinStateMutex};
 use weevibin::websocket::{WebSocketConnection, WebSocketManager, WebSocketManagerMutex};
 
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
 /// Called by the UI once it's ready. There's probably a different idiomatic-Tauri way to do this.
 #[tauri::command]
 async fn on_ui_ready(
@@ -54,7 +49,7 @@ async fn set_vibin_server(
 
             println!("Command wait complete");
 
-            *manager.vibin_server = vibin_server;
+            manager.vibin_host = Some(Box::new(vibin_server));
             manager.start();
 
             return Ok(String::from("OK"));
@@ -74,17 +69,20 @@ fn main() {
 
     let context = tauri::generate_context!();
 
+    // Runtime state
     let app_state_clone = Arc::clone(&app_state);
     let vibin_state_clone = Arc::clone(&vibin_state);
 
     tauri::Builder::default()
         .setup(move |app| {
+            println!("Data directory: {:?}", app.handle().path_resolver().app_data_dir().unwrap());
+
             let ws_manager_mutex = Arc::new(TauriMutex::new(WebSocketManager::new(
                 Arc::new(TauriMutex::new(WebSocketConnection {
                     stop_flag: None,
-                    vibin_server: String::from(""),
+                    vibin_host: String::from(""),
                 })),
-                Box::new(String::from("ws://192.168.2.101:8080/ws")),
+                None,
                 Arc::new(Mutex::new(false)),
                 app_state_clone,
                 vibin_state_clone,
@@ -97,7 +95,8 @@ fn main() {
         })
         .manage(app_state)
         .manage(vibin_state)
-        .invoke_handler(tauri::generate_handler![greet, on_ui_ready, set_vibin_server])
+        .plugin(tauri_plugin_store::Builder::default().build())
+        .invoke_handler(tauri::generate_handler![on_ui_ready, set_vibin_server])
         .run(context)
         .expect("Error while running tauri application");
 }

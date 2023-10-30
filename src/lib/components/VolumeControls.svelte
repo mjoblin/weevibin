@@ -23,8 +23,6 @@
     $: volumeDisplay = Math.round(($vibinState.amplifier?.volume || 0) * 100);
     $: volumeBigUp = Math.min(volume + bigVolumeChangeAmount, 1.0);
     $: volumeBigDown = Math.max(volume - bigVolumeChangeAmount, 0.0);
-
-    console.log("COLOR", colorFromCssVar("--background-mid"));
 </script>
 
 {#if $vibinState.amplifier && $isPowerOn}

@@ -2,6 +2,13 @@ import { derived, writable } from "svelte/store";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/tauri";
 
+import {
+    type VibinHostDetails,
+    getPersistedVibinHostDetails,
+    setPersistedVibinHaveConnected,
+    setPersistedVibinHost,
+} from "./persisted_state.ts";
+
 // These are the TypeScript equivalents of the Rust structs defined in src-tauri/src/state.rs
 
 export type ConnectionStatus = "Connected" | "Connecting" | "Disconnected" | "Disconnecting";
@@ -117,6 +124,8 @@ type Screen = "main" | "settings";
 
 const DEFAULT_VIBIN_STATE = { display: {} };
 
+export let uiInitialized = writable<boolean>(false);
+
 export let currentScreen = writable<Screen>("main");
 
 export let appErrorState = writable<AppError>();
@@ -124,6 +133,27 @@ export let appErrorState = writable<AppError>();
 export let appState = writable<AppState>({ vibin_connection: { state: "Disconnected" } });
 
 export let vibinState = writable<VibinState>(DEFAULT_VIBIN_STATE);
+
+/**
+ * Create a Svelte writable which wraps the persisted Vibin host details.
+ */
+async function createVibinHostState() {
+    const { subscribe, set } = writable<VibinHostDetails>(await getPersistedVibinHostDetails());
+
+    return {
+        subscribe,
+        setHostName: async (host: string) => {
+            await setPersistedVibinHost(host)
+            set(await getPersistedVibinHostDetails());
+        },
+        setHaveConnected: async (haveConnected?: boolean) => {
+            await setPersistedVibinHaveConnected(haveConnected)
+            set(await getPersistedVibinHostDetails());
+        },
+    };
+}
+
+export const vibinHost = await createVibinHostState();
 
 export const isPowerOn = derived(vibinState, ($vibinState) => $vibinState.power === "on");
 
@@ -133,25 +163,46 @@ export const isPlaying = derived(vibinState, ($vibinState) => $vibinState.transp
 
 export let playheadPosition = writable<number | null>(null);
 
-let lastSourceClass: SourceClass | undefined = undefined;
+// Track the last seen audio source
+let lastSeenSourceClass: SourceClass | undefined = undefined;
 
+/**
+ * Initialize the state-related components of the application.
+ *
+ *   - Set up listeners to receive the various message types emitted from Rust. These message
+ *     payloads are used to populate Svelte state.
+ *   - Invoke Rust's on_ui_ready command when the UI is ready to receive messages.
+ */
 const initialize = async () => {
     await listen<AppState>("AppState", (message) => {
-        // console.log("AppState", message.payload);
         appState.set(message.payload);
         playheadPosition.set(null);
 
-        if (message.payload.vibin_connection.state !== "Connected") {
+        if (message.payload.vibin_connection.state === "Connected") {
+            vibinHost.setHaveConnected();
+        } else {
+            // When we're not connected to the Vibin WebSocket server, we want to reset all the
+            // Vibin state to ensure the UI enters a "no information known" state.
             vibinState.set(DEFAULT_VIBIN_STATE);
+
+            // If we're disconnected from the Vibin WebSocket server with an error message,
+            // then we want to persist the fact that we haven't connected successfully. This
+            // can be used to drive how the UI behaves on startup/etc.
+            const connInfo = message.payload.vibin_connection;
+
+            if (connInfo.state === "Disconnected" && connInfo.message) {
+                vibinHost.setHaveConnected(false);
+            }
         }
     });
 
     await listen<VibinState>("VibinState", (message) => {
-        // console.log("VibinState", message.payload);
         vibinState.set(message.payload);
 
-        if (message.payload.source?.class !== lastSourceClass) {
-            lastSourceClass = message.payload.source?.class;
+        if (message.payload.source?.class !== lastSeenSourceClass) {
+            // When the last seen audio source changes, the playhead position from the previous
+            // source is no longer valid.
+            lastSeenSourceClass = message.payload.source?.class;
             playheadPosition.set(null);
         }
     });
@@ -161,11 +212,15 @@ const initialize = async () => {
     });
 
     await listen<AppError>("Error", (message) => {
-        // console.log("Error", message.payload);
         appErrorState.set(message.payload);
     });
 
+    // Inform Rust that the UI is ready. This means that the message listeners are all primed.
     await invoke("on_ui_ready");
+
+    // Inform the rest of the UI that the UI is initialized. This will enable follow-on actions
+    // such as connecting to the WebSocket server.
+    uiInitialized.set(true);
 }
 
 await initialize();
