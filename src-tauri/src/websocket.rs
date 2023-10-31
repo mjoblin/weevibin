@@ -167,6 +167,7 @@ enum VibinWebSocketError {
     WebSocketError(tungstenite::Error),
     CustomError(String),
     ClientLostConnectionError,
+    ServerClosedConnectionError,
 }
 
 #[derive(Clone)]
@@ -524,7 +525,7 @@ impl WebSocketConnection {
                             // losing the connection for other reasons (which is detected by ping
                             // time checks).
                             println!("WebSocket connection has been closed by Vibin");
-                            break;
+                            return Err(VibinWebSocketError::ServerClosedConnectionError);
                         },
                         tungstenite::Message::Text(message_text) => {
                             // Incoming VibinMessage from WebSocket server.
@@ -623,7 +624,7 @@ impl WebSocketConnection {
 
                         println!("WebSocket manager error: {:?}", e);
                         break;
-                    }
+                    },
                     VibinWebSocketError::ClientLostConnectionError => {
                         let msg = String::from("Client lost connection to WebSocket server");
 
@@ -636,6 +637,20 @@ impl WebSocketConnection {
                         app_handle.emit_websocket_error(&msg);
 
                         println!("WebSocket client connection lost; will attempt reconnect in 5 seconds");
+                        tokio::time::sleep(tokio::time::Duration::from_secs(RETRY_DELAY_SECS)).await;
+                    },
+                    VibinWebSocketError::ServerClosedConnectionError => {
+                        let msg = String::from("WebSocket server closed the connection");
+
+                        {
+                            let mut app_state = app_state_mutex.lock().unwrap();
+                            app_state.set_disconnected(Some(msg.clone()));
+                            app_handle.emit_app_state(&app_state);
+                        }
+
+                        app_handle.emit_websocket_error(&msg);
+
+                        println!("WebSocket server closed the connection; will attempt reconnect in 5 seconds");
                         tokio::time::sleep(tokio::time::Duration::from_secs(RETRY_DELAY_SECS)).await;
                     }
                 },

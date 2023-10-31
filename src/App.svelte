@@ -24,13 +24,6 @@
         haveAttemptedStartupVibinConnect = true;
         connectToVibin($vibinHost.host);
     }
-
-    // TODO: UI:
-    // TODO:     What is the TypeScript type for Tabler icons
-    //
-    // TODO: Rust:
-    // TODO: XXX Look into controlling stop_reading()'s poll delay
-    // TODO:     Reconnect WebSocket when it loses its connection
 </script>
 
 <main class="Application">
