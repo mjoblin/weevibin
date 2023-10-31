@@ -78,10 +78,6 @@ fn main() {
             println!("Data directory: {:?}", app.handle().path_resolver().app_data_dir().unwrap());
 
             let ws_manager_mutex = Arc::new(TauriMutex::new(WebSocketManager::new(
-                Arc::new(TauriMutex::new(WebSocketConnection {
-                    stop_flag: None,
-                    vibin_host: String::from(""),
-                })),
                 None,
                 Arc::new(Mutex::new(false)),
                 app_state_clone,

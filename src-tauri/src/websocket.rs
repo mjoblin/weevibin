@@ -25,6 +25,16 @@ use crate::state::{
     WeeVibinMessage,
 };
 
+// ------------------------------------------------------------------------------------------------
+// TODO: Fix overall architecture. The current implementation is a bit of a mess. There's a
+//  WebSocketManager and WebSocketConnection, which might be OK conceptually -- but they both
+//  expect to be able to directly access the application state and vibin state, and it's not clear
+//  what owns what (like connection status). Error handling is also unclear, including the purpose
+//  of VibinWebSocketError. There's also a lot of Arc<Mutex>> and cloning going on, which got
+//  things working but requires a considered analysis. Also consider properly handling the
+//  remaining unwrap() calls.
+// ------------------------------------------------------------------------------------------------
+//
 // TODO: Handle WebSocket connection errors for bubbling back to the UI, e.g.:
 //   Io(Custom { kind: Uncategorized, error: "failed to lookup address information: nodename nor servname provided, or not known" })
 // TODO: Handle initial state (e.g. ensure full transport state is known at startup, before next
@@ -88,6 +98,8 @@ struct PositionPayload {
 
 // ------------------------------------------------------------------------------------------------
 // CurrentlyPlaying message
+
+// TODO: Rename these structs to address what the "WS" prefix is addressing.
 
 #[derive(Serialize, Deserialize)]
 struct StreamWS {
@@ -170,21 +182,23 @@ enum VibinWebSocketError {
     ServerClosedConnectionError,
 }
 
+// ------------------------------------------------------------------------------------------------
+
 #[derive(Clone)]
 pub struct WebSocketManager {
-    pub connection: Arc<TauriMutex<WebSocketConnection>>,
     pub vibin_host: Option<Box<String>>,
     pub stop_flag: Arc<Mutex<bool>>,
     pub app_state_mutex: AppStateMutex,
     pub vibin_state_mutex: VibinStateMutex,
     pub app_handle: AppHandle,
 
+    pub connection: Arc<TauriMutex<WebSocketConnection>>,
     pub is_started: Arc<Mutex<bool>>,
+    pub have_connected: Arc<Mutex<bool>>,
 }
 
 impl WebSocketManager {
     pub fn new(
-        connection: Arc<TauriMutex<WebSocketConnection>>,
         vibin_host: Option<Box<String>>,
         stop_flag: Arc<Mutex<bool>>,
         app_state_mutex: AppStateMutex,
@@ -192,14 +206,18 @@ impl WebSocketManager {
         app_handle: AppHandle,
     ) -> Self {
         WebSocketManager {
-            connection,
             vibin_host,
             stop_flag,
             app_state_mutex,
             vibin_state_mutex,
             app_handle,
 
+            connection: Arc::new(TauriMutex::new(WebSocketConnection {
+                stop_flag: None,
+                vibin_host: String::from(""),
+            })),
             is_started: Arc::new(Mutex::new(false)),
+            have_connected: Arc::new(Mutex::new(false)),
         }
     }
 
@@ -282,6 +300,8 @@ impl WebSocketManager {
 unsafe impl Send for WebSocketManager {}
 
 pub type WebSocketManagerMutex = Arc<TauriMutex<WebSocketManager>>;
+
+// ------------------------------------------------------------------------------------------------
 
 pub struct WebSocketConnection {
     pub stop_flag: Option<Arc<Mutex<bool>>>,
