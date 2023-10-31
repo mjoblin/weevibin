@@ -9,7 +9,7 @@
 
     // If we haven't connected successfully at startup, then automatically switch to the settings
     // screen so the user knows that the host setting needs tweaking.
-    $: if (!$vibinHost.haveConnected) {
+    $: if (!$vibinHost.haveConnected && !haveAttemptedStartupVibinConnect) {
         $currentScreen = "settings";
     }
 
@@ -27,11 +27,10 @@
 
     // TODO: UI:
     // TODO:     What is the TypeScript type for Tabler icons
-    // TODO:     Investigate using CSS's "filter: brightness(1.2);" for hover
     //
     // TODO: Rust:
-    // TODO:    Look into controlling stop_reading()'s poll delay
-    // TODO:    Reconnect WebSocket when it loses its connection
+    // TODO: XXX Look into controlling stop_reading()'s poll delay
+    // TODO:     Reconnect WebSocket when it loses its connection
 </script>
 
 <main class="Application">

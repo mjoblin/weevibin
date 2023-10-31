@@ -17,14 +17,14 @@ use serde::ser::SerializeStruct;
 // Message types
 
 #[derive(Debug)]
-pub enum Message {
+pub enum WeeVibinMessage {
     AppState,
     VibinState,
     Position,
     Error,
 }
 
-impl fmt::Display for Message {
+impl fmt::Display for WeeVibinMessage {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(self, f)
     }

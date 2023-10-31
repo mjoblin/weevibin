@@ -8,7 +8,7 @@ vibinHost.subscribe((hostDetails) => {
 
     if (/:[0-9]+$/.test(hostName)) {
         // Port override already specified
-        host = hostName;
+        host = `http://${hostName}`;
     } else {
         host = `http://${hostName}:${DEFAULT_VIBIN_PORT}`;
     }

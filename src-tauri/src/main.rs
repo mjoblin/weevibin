@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use tauri::async_runtime::Mutex as TauriMutex;
 use tauri::Manager;
 
-use weevibin::state::{AppState, AppStateMutex, Message, VibinState, VibinStateMutex};
+use weevibin::state::{AppState, AppStateMutex, WeeVibinMessage, VibinState, VibinStateMutex};
 use weevibin::websocket::{WebSocketConnection, WebSocketManager, WebSocketManagerMutex};
 
 /// Called by the UI once it's ready. There's probably a different idiomatic-Tauri way to do this.
@@ -17,12 +17,12 @@ async fn on_ui_ready(
     vibin_state: tauri::State<'_, VibinStateMutex>,
     app_handle: tauri::AppHandle,
 ) -> Result<(), String> {
-    println!(">>> {}", &Message::AppState.to_string());
+    println!(">>> {}", &WeeVibinMessage::AppState.to_string());
     app_handle
-        .emit_all(&Message::AppState.to_string(), &*app_state.inner().lock().unwrap())
+        .emit_all(&WeeVibinMessage::AppState.to_string(), &*app_state.inner().lock().unwrap())
         .unwrap();
     app_handle
-        .emit_all(&Message::VibinState.to_string(), &*vibin_state.inner().lock().unwrap())
+        .emit_all(&WeeVibinMessage::VibinState.to_string(), &*vibin_state.inner().lock().unwrap())
         .unwrap();
 
     ws_manager.inner().lock().await.start();
@@ -56,7 +56,7 @@ async fn set_vibin_server(
         }
         Err(e) => {
             let error = format!("Invalid URL: {:?}", e);
-            app_handle.emit_all(&Message::Error.to_string(), &error).unwrap();
+            app_handle.emit_all(&WeeVibinMessage::Error.to_string(), &error).unwrap();
 
             return Err(error);
         }

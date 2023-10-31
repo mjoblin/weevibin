@@ -1,29 +1,28 @@
-use std::io;
 use std::sync::{Arc, Mutex};
+use std::time::SystemTime;
 
-use futures::future;
-use futures::task::Poll;
 use futures_util::StreamExt;
 use serde::{Deserialize, Serialize};
 use tauri::async_runtime::Mutex as TauriMutex;
 use tauri::{AppHandle, Manager};
 use tokio;
-use tokio::time;
+use tokio::time::{Duration, timeout};
 use tokio_tungstenite::connect_async;
 use tungstenite;
 
+use crate::average::RunningAverage;
 use crate::state::{
     ActiveTrack,
     Amplifier,
     AppState,
     AppStateMutex,
-    Message,
     Position,
     StreamerDisplay,
     StreamerSources,
     TransportState,
     VibinConnectionState::{Connected, Connecting, Disconnected, Disconnecting},
     VibinStateMutex,
+    WeeVibinMessage,
 };
 
 // TODO: Handle WebSocket connection errors for bubbling back to the UI, e.g.:
@@ -146,13 +145,13 @@ trait CustomEmitters {
 
 impl CustomEmitters for AppHandle {
     fn emit_app_state(&self, app_state: &AppState) {
-        self.emit_all(&Message::AppState.to_string(), app_state).unwrap();
+        self.emit_all(&WeeVibinMessage::AppState.to_string(), app_state).unwrap();
         println!("SENT: {:?}", app_state);
     }
 
     fn emit_websocket_error(&self, error_message: &str) {
         self.emit_all(
-            &Message::Error.to_string(),
+            &WeeVibinMessage::Error.to_string(),
             AppError {
                 category: AppErrorCategory::WebSocket,
                 message: error_message.into(),
@@ -167,6 +166,7 @@ impl CustomEmitters for AppHandle {
 enum VibinWebSocketError {
     WebSocketError(tungstenite::Error),
     CustomError(String),
+    ClientLostConnectionError,
 }
 
 #[derive(Clone)]
@@ -267,7 +267,7 @@ impl WebSocketManager {
             let connection_state = self.app_state_mutex.lock().unwrap().vibin_connection.clone();
             match connection_state {
                 Disconnected(_) => is_disconnected = true,
-                _ => time::sleep(time::Duration::from_millis(100)).await,
+                _ => tokio::time::sleep(Duration::from_millis(100)).await,
             }
         }
 
@@ -360,7 +360,7 @@ impl WebSocketConnection {
                     serde_json::from_value(vibin_msg.payload).unwrap();
 
                 app_handle
-                    .emit_all(&Message::Position.to_string(), Position {
+                    .emit_all(&WeeVibinMessage::Position.to_string(), Position {
                         position: position_payload.position,
                     })
                     .unwrap();
@@ -370,7 +370,7 @@ impl WebSocketConnection {
 
         if send_update_to_client {
             app_handle
-                .emit_all(&Message::VibinState.to_string(), &(*vibin_state))
+                .emit_all(&WeeVibinMessage::VibinState.to_string(), &(*vibin_state))
                 .unwrap();
         }
     }
@@ -381,6 +381,7 @@ impl WebSocketConnection {
         vibin_state_mutex: &VibinStateMutex,
         app_handle: AppHandle,
     ) -> Result<(), VibinWebSocketError> {
+        // Don't attempt to connect if we're not Disconnected.
         {
             // NOTE: app_state_mutex is locked inside a block to ensure the lock is released before
             //  the subsequent .await call. Ref: https://tokio.rs/tokio/tutorial/shared-state
@@ -398,23 +399,9 @@ impl WebSocketConnection {
                     return Ok(());
                 },
             }
-
-            // if app_state.vibin_connection != Disconnected {
-            //     let err = format!(
-            //         "Connection state is not {:?}; not proceeding with Vibin WebSocket connection",
-            //         Disconnected
-            //     );
-            //
-            //     println!("{}", &err);
-            //     app_handle.emit_websocket_error(&err);
-            //
-            //     return Ok(());
-            // }
         }
 
-        // let url = url::Url::parse("ws://192.168.2.101:8080/ws").unwrap();
-        // let url = url::Url::parse(self.vibin_host.as_str()).unwrap();
-
+        // Initiate connection to WebSocket server.
         let url = match url::Url::parse(self.vibin_host.as_str()) {
             Ok(url) => url,
             Err(e) => {
@@ -429,10 +416,11 @@ impl WebSocketConnection {
             app_handle.emit_app_state(&app_state);
         }
 
-        let connect_timeout = tokio::time::Duration::from_secs(5);
+        // Detect connection attempt timeouts.
+        let connect_timeout = Duration::from_secs(5);
         let connect_attempt = connect_async(&url);
 
-        let (ws_stream, _) = match tokio::time::timeout(connect_timeout, connect_attempt).await {
+        let (mut ws_stream, _) = match timeout(connect_timeout, connect_attempt).await {
             Ok(Ok(result)) => result,
             Ok(Err(e)) => {
                 let error_message = match e {
@@ -452,6 +440,7 @@ impl WebSocketConnection {
             }
         };
 
+        // Announce the connection.
         {
             let mut app_state = app_state_mutex.lock().unwrap();
 
@@ -464,48 +453,100 @@ impl WebSocketConnection {
         }
 
         // This is a read-only websocket connection, so we ignore the write stream.
-        let (_, read) = ws_stream.split();
+        let (_, mut read) = ws_stream.split();
 
-        // TODO: Look into controlling stop_reading()'s poll delay
-        let stop_reading = future::poll_fn(|_context| {
-            if *self.stop_flag.as_ref().unwrap().lock().unwrap() == true {
-                Poll::Ready(())
-            } else {
-                Poll::Pending
-            }
-        });
+        // Read messages forever; but check at regular intervals to see if the stop_flag is set or
+        // whether the client seems to have lost its connection.
+        let mut interval = tokio::time::interval(Duration::from_secs(2));
 
-        read.take_until(stop_reading)
-            .for_each(|message| async {
-                let msg = message.unwrap();
+        // Track WebSocket server ping times. This is done to establish when the client may have
+        // lost the connection (perhaps due to going to sleep). This is different from the server
+        // explicitly closing the connection (see tungstenite::Message::Close). The average ping
+        // duration is tracked, and if enough time has passed since the last ping then we assume
+        // the connection is lost. We wait for at least 2 pings to come in before calculating the
+        // average ping delay.
+        let mut ping_avg = RunningAverage::new(10);
+        let mut last_ping_time = SystemTime::now();
+        let mut have_ignored_first_ping = false;
+        const START_PING_THRESHOLD_SECS: u64 = 60;  // For use until average ping time is known
+        const PING_DURATION_BUFFER_FACTOR: f64 = 1.25;  // 125% is considered too long to wait
 
-                if msg.is_ping() {
-                    println!("Got ping");
-                } else {
-                    match msg.into_text() {
-                        Ok(message_text) => match serde_json::from_str::<VibinMessage>(&message_text) {
-                            Ok(vibin_msg) => {
-                                let app_handle = app_handle.clone();
-                                self.process_message(vibin_msg, vibin_state_mutex, app_handle);
+        loop {
+            tokio::select! {
+                _ = interval.tick() => {
+                    // Do some checks every interval, regardless of incoming messages.
+
+                    // Check if we've been told to stop listening.
+                    if *self.stop_flag.as_ref().unwrap().lock().unwrap() == true {
+                        println!("WebSocket handler stop_flag detected");
+                        break;
+                    }
+
+                    // Check if it's been too long since we last received a server ping.
+                    match SystemTime::now().duration_since(last_ping_time) {
+                        Ok(duration) => {
+                            let ping_duration_check = match ping_avg.len() {
+                                len if len > 2 => ping_avg.average() * PING_DURATION_BUFFER_FACTOR,
+                                _ => START_PING_THRESHOLD_SECS as f64,
+                            };
+
+                            if duration.as_secs() as f64 > ping_duration_check {
+                                println!("WebSocket ping not received for {ping_duration_check} secs");
+
+                                return Err(VibinWebSocketError::ClientLostConnectionError);
                             }
-                            Err(e) => app_handle.emit_websocket_error(&format!(
-                                "Could not deserialize WebSocket message; error: {:?} :: message: {}",
-                                e, message_text
-                            )),
                         },
-                        Err(e) => {
-                            println!("MESSAGE TAKE ERROR: {:?}", e);
-                            app_handle.emit_websocket_error(&format!(
-                                "Could not extract text from WebSocket message: {:?}",
-                                e
-                            ))
+                        Err(e) => println!("WebSocket error determining last ping duration: {:?}", e),
+                    }
+                }
+                Some(message) = read.next() => {
+                    let msg = message.unwrap();
+
+                    match msg {
+                        tungstenite::Message::Ping(_) => {
+                            let now = SystemTime::now();
+
+                            // Keep track of how long we're waiting between pings. Ignore the first
+                            // ping because it might throw off the average wait time calculation.
+                            if have_ignored_first_ping {
+                                match now.duration_since(last_ping_time) {
+                                    Ok(duration) => ping_avg.add(duration.as_secs() as f64),
+                                    _ => {},
+                                };
+                            } else {
+                                have_ignored_first_ping = true;
+                            }
+
+                            last_ping_time = now;
+                        },
+                        tungstenite::Message::Close(_) => {
+                            // Explicit server connection close. This is distinct from the client
+                            // losing the connection for other reasons (which is detected by ping
+                            // time checks).
+                            println!("WebSocket connection has been closed by Vibin");
+                            break;
+                        },
+                        tungstenite::Message::Text(message_text) => {
+                            // Incoming VibinMessage from WebSocket server.
+                            match serde_json::from_str::<VibinMessage>(&message_text) {
+                                Ok(vibin_msg) => {
+                                    let app_handle = app_handle.clone();
+                                    self.process_message(vibin_msg, vibin_state_mutex, app_handle);
+                                }
+                                Err(e) => app_handle.emit_websocket_error(&format!(
+                                    "Could not deserialize WebSocket message; error: {:?} :: message: {}",
+                                    e, message_text
+                                )),
+                            }
+                        },
+                        unexpected => {
+                            println!("Ignoring unexpected WebSocket message type: {:?}", unexpected);
                         },
                     }
                 }
-            })
-            .await;
+            }
+        }
 
-        // TODO: Investigate what happens when the WebSocket connection is disrupted.
         let mut app_state = app_state_mutex.lock().unwrap();
         app_state.vibin_connection = Disconnected(None);
         app_handle.emit_app_state(&app_state);
@@ -528,6 +569,8 @@ impl WebSocketConnection {
 
         self.stop_flag = Some(stop_flag.clone());
         *self.stop_flag.as_ref().unwrap().lock().unwrap() = false;
+
+        const RETRY_DELAY_SECS: u64 = 5;
 
         loop {
             match self
@@ -563,7 +606,7 @@ impl WebSocketConnection {
                             }
 
                             println!("Will attempt reconnect in 5 seconds");
-                            tokio::time::sleep(tokio::time::Duration::from_millis(5000)).await;
+                            tokio::time::sleep(tokio::time::Duration::from_secs(RETRY_DELAY_SECS)).await;
                         }
                         _ => {
                             let error = format!("Unknown error: {:?}", e);
@@ -580,6 +623,20 @@ impl WebSocketConnection {
 
                         println!("WebSocket manager error: {:?}", e);
                         break;
+                    }
+                    VibinWebSocketError::ClientLostConnectionError => {
+                        let msg = String::from("Client lost connection to WebSocket server");
+
+                        {
+                            let mut app_state = app_state_mutex.lock().unwrap();
+                            app_state.set_disconnected(Some(msg.clone()));
+                            app_handle.emit_app_state(&app_state);
+                        }
+
+                        app_handle.emit_websocket_error(&msg);
+
+                        println!("WebSocket client connection lost; will attempt reconnect in 5 seconds");
+                        tokio::time::sleep(tokio::time::Duration::from_secs(RETRY_DELAY_SECS)).await;
                     }
                 },
             }
