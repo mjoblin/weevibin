@@ -36,6 +36,10 @@
 
 <style>
     .Application {
-        padding: 0 var(--app-padding);
+        border-radius: 7px;
+        border: 1px solid #51545a;
+        padding: 12px 12px 9px 12px;
+        color: #f6f6f6;
+        background-color: #2f2f2f;
     }
 </style>

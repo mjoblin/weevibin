@@ -7,13 +7,16 @@
     font-weight: var(--root-font-weight);
 
     color: var(--root-color);
-    background-color: var(--root-background-color);
 
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     -webkit-text-size-adjust: 100%;
+}
+
+body {
+    margin-top: 2px;
 }
 
 h1 {

@@ -34,6 +34,7 @@
         display: flex;
         width: 100%;
         justify-content: space-between;
+        align-items: flex-start;
     }
 
     .playback-controls {

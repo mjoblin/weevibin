@@ -84,6 +84,9 @@
 <style>
     .SettingsScreen {
         font-size: 0.8em;
+
+        /* Make the settings consume the same height as Main. Would be nice to not hardcode this. */
+        height: 143px;
     }
 
     label, input {

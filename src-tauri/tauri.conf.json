@@ -21,7 +21,7 @@
         "bundle": {
             "active": true,
             "targets": "all",
-            "identifier": "com.tauri.dev",
+            "identifier": "com.redactedcat.weevibin",
             "icon": [
                 "icons/32x32.png",
                 "icons/128x128.png",
@@ -33,14 +33,26 @@
         "security": {
             "csp": null
         },
+        "macOSPrivateApi": true,
         "windows": [
             {
                 "fullscreen": false,
-                "resizable": true,
+                "resizable": false,
                 "title": "weevibin",
-                "width": 800,
-                "height": 600
+                "width": 440,
+                "height": 179,
+                "visible": false,
+                "hiddenTitle": true,
+                "decorations": false,
+                "focus": false,
+                "transparent": true,
+                "skipTaskbar": true
             }
-        ]
+        ],
+        "systemTray": {
+            "iconPath": "icons/icon.png",
+            "iconAsTemplate": true,
+            "menuOnLeftClick": false
+        }
     }
 }
