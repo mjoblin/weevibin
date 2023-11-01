@@ -16,10 +16,12 @@
             <span class="details-line2">{$vibinState.display.line2 || ""}</span>
             <span class="details-line3">{$vibinState.display.line3 || ""}</span>
         {:else}
-            <span class="details-line1">No track details</span>
-            {#if !$isConnected}
-                <span class="details-line2">Not connected to Vibin; configure in settings.</span>
-            {/if}
+            <div class="delayed-display" style="display: flex; flex-direction: column">
+                <span class="details-line1">No track details</span>
+                {#if !$isConnected}
+                    <span class="details-line2">Not connected to Vibin; configure in settings.</span>
+                {/if}
+            </div>
         {/if}
     </div>
 </div>
@@ -93,5 +95,21 @@
             color: var(--text-dim);
             font-size: 0.7em;
         }
+    }
+
+    @keyframes delayedDisplayAnimation {
+        0% {
+            opacity: 0;
+        }
+        99% {
+            opacity: 0;
+        }
+        100% {
+            opacity: 1;
+        }
+    }
+
+    .delayed-display {
+        animation: delayedDisplayAnimation 3s forwards;
     }
 </style>
