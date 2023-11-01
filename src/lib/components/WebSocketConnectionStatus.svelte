@@ -1,7 +1,7 @@
 <script lang="ts">
     import tinycolor, { type ColorInput } from "tinycolor2";
 
-    import { appState, type ConnectionStatus } from "../state.ts";
+    import { type ConnectionStatus, appState, isConnected } from "../state.ts";
 
     export let hideIfConnected: boolean = true;
 
@@ -31,6 +31,9 @@
     <div class="WebSocketConnectionStatus" style={cssVarStyles}>
         <div class={"status-light" + `${["Connecting", "Disconnecting"].includes(connectionStatus) ? " light-animation" : ""}`}></div>
         <span class="status-text">{statusDisplay}</span>
+        {#if $isConnected}
+            <span class="happy">😃</span>
+        {/if}
     </div>
 {/if}
 
@@ -67,5 +70,20 @@
 
     .light-animation {
         animation: animateLight 1.5s infinite;
+    }
+
+    @keyframes animateHappy {
+        0%, 100% {
+            transform: scale(1);
+        }
+        50% {
+            transform: scale(1.5);
+        }
+    }
+
+    .happy {
+        margin-left: 5px;
+        font-size: 1.5em;
+        animation: animateHappy 0.5s ease-in-out;
     }
 </style>
