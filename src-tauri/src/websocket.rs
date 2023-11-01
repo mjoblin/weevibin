@@ -158,7 +158,6 @@ trait CustomEmitters {
 impl CustomEmitters for AppHandle {
     fn emit_app_state(&self, app_state: &AppState) {
         self.emit_all(&WeeVibinMessage::AppState.to_string(), app_state).unwrap();
-        println!("SENT: {:?}", app_state);
     }
 
     fn emit_websocket_error(&self, error_message: &str) {
@@ -221,6 +220,10 @@ impl WebSocketManager {
         }
     }
 
+    pub fn set_have_connected(&mut self, have_connected: bool) {
+        *self.have_connected.lock().unwrap() = have_connected;
+    }
+
     pub fn start(&mut self) {
         if *self.is_started.lock().unwrap() == true {
             println!("WebSocketManager is already started; ignoring start request");
@@ -233,9 +236,21 @@ impl WebSocketManager {
         }
 
         *self.is_started.lock().unwrap() = true;
+        *self.have_connected.lock().unwrap() = false;
 
-        println!("WebSocketManager has been started");
+        println!("WebSocketManager is starting for: {}", match &self.vibin_host {
+            Some(inner) => *inner.clone(),
+            None => "unknown".to_string(),
+        });
+
         let self_clone = self.clone();
+
+        // TODO: This clone of the manager for passing to the connection feels super unfortunate.
+        //  It's only done so that the connection can set the "have_connected" field on the manager
+        //  on a successful connection. There must be a better way for the manager to be made aware
+        //  of the successful connection.
+        let self_clone_for_connection = self.clone();
+
         *self.stop_flag.lock().unwrap() = false;
 
         tauri::async_runtime::spawn(async move {
@@ -250,6 +265,7 @@ impl WebSocketManager {
                     &self_clone.app_state_mutex,
                     &self_clone.vibin_state_mutex,
                     self_clone.app_handle.clone(),
+                    self_clone_for_connection,
                 )
                 .await;
 
@@ -259,8 +275,6 @@ impl WebSocketManager {
             *self_clone.is_started.lock().unwrap() = false;
             self_clone.app_handle.emit_app_state(&self_clone.app_state_mutex.lock().unwrap());
         });
-
-        println!("End of start function");
     }
 
     pub async fn stop(&mut self) {
@@ -294,6 +308,7 @@ impl WebSocketManager {
 
         self.app_state_mutex.lock().unwrap().vibin_connection = Disconnected(None);
         *self.is_started.lock().unwrap() = false;
+        *self.have_connected.lock().unwrap() = false;
     }
 }
 
@@ -401,6 +416,7 @@ impl WebSocketConnection {
         app_state_mutex: &AppStateMutex,
         vibin_state_mutex: &VibinStateMutex,
         app_handle: AppHandle,
+        manager: WebSocketManager,
     ) -> Result<(), VibinWebSocketError> {
         // Don't attempt to connect if we're not Disconnected.
         {
@@ -472,6 +488,8 @@ impl WebSocketConnection {
             app_state.vibin_connection = Connected(self.vibin_host.clone());
             app_handle.emit_app_state(&app_state);
         }
+
+        *manager.have_connected.lock().unwrap() = true;
 
         // This is a read-only websocket connection, so we ignore the write stream.
         let (_, mut read) = ws_stream.split();
@@ -587,8 +605,9 @@ impl WebSocketConnection {
         app_state_mutex: &AppStateMutex,
         vibin_state_mutex: &VibinStateMutex,
         app_handle: AppHandle,
+        manager: WebSocketManager,
     ) {
-        println!("WebSocketConnection::start has been called");
+        println!("WebSocketConnection::start has been called: {vibin_host}");
         self.vibin_host = vibin_host.to_owned();
 
         self.stop_flag = Some(stop_flag.clone());
@@ -597,40 +616,30 @@ impl WebSocketConnection {
         const RETRY_DELAY_SECS: u64 = 5;
 
         loop {
+            let manager_clone = manager.clone();
+
             match self
-                .handle_websocket(app_state_mutex, vibin_state_mutex, app_handle.clone())
+                .handle_websocket(app_state_mutex, vibin_state_mutex, app_handle.clone(), manager_clone)
                 .await
             {
                 Ok(_) => {
-                    println!("WebSocketConnection handle_websocket() has ended");
+                    println!("WebSocketConnection handle_websocket() has ended successfully");
                     app_state_mutex.lock().unwrap().set_disconnected(None);
                     *self.stop_flag.as_ref().unwrap().lock().unwrap() = false;
 
-                    // println!("WebSocket Manager will attempt reconnect in 5 seconds");
-                    // tokio::time::sleep(tokio::time::Duration::from_millis(5000)).await;
+                    // This is a successful exit from handle_websocket(), which means we either
+                    // stopped reading messages (because we were asked to stop), or we can't connect
+                    // in a way that shouldn't be retried, so we want to hard break out.
                     break;
                 }
                 Err(e) => match e {
                     VibinWebSocketError::WebSocketError(e) => match e {
                         tungstenite::Error::Io(_) => {
-                            let prior_connection_state = app_state_mutex.lock().unwrap().vibin_connection.clone();
-
                             let error = format!("IO error: {:?}", e);
                             app_state_mutex.lock().unwrap().set_disconnected(Some(error.clone()));
 
                             println!("WebSocket manager error: {:?}", &error);
                             app_handle.emit_websocket_error(&error);
-
-                            match prior_connection_state {
-                                Connected(_) => {},
-                                // If we're here then it's likely that we attempted to connect using a
-                                // vibin host provided by the user, but the connection failed so we
-                                // want to break out.
-                                _ => break,
-                            }
-
-                            println!("Will attempt reconnect in 5 seconds");
-                            sleep(Duration::from_secs(RETRY_DELAY_SECS)).await;
                         }
                         _ => {
                             let error = format!("Unknown error: {:?}", e);
@@ -638,7 +647,6 @@ impl WebSocketConnection {
                             app_handle.emit_websocket_error(&error);
 
                             println!("Unhandled WebSocket manager error: {:?}", error);
-                            break;
                         }
                     },
                     VibinWebSocketError::CustomError(e) => {
@@ -646,10 +654,10 @@ impl WebSocketConnection {
                         app_handle.emit_websocket_error(&e);
 
                         println!("WebSocket manager error: {:?}", e);
-                        break;
                     },
                     VibinWebSocketError::ClientLostConnectionError => {
                         let msg = String::from("Client lost connection to WebSocket server");
+                        println!("{msg}");
 
                         {
                             let mut app_state = app_state_mutex.lock().unwrap();
@@ -658,12 +666,10 @@ impl WebSocketConnection {
                         }
 
                         app_handle.emit_websocket_error(&msg);
-
-                        println!("WebSocket client connection lost; will attempt reconnect in 5 seconds");
-                        sleep(Duration::from_secs(RETRY_DELAY_SECS)).await;
                     },
                     VibinWebSocketError::ServerClosedConnectionError => {
                         let msg = String::from("WebSocket server closed the connection");
+                        println!("{msg}");
 
                         {
                             let mut app_state = app_state_mutex.lock().unwrap();
@@ -672,11 +678,20 @@ impl WebSocketConnection {
                         }
 
                         app_handle.emit_websocket_error(&msg);
-
-                        println!("WebSocket server closed the connection; will attempt reconnect in 5 seconds");
-                        sleep(Duration::from_secs(RETRY_DELAY_SECS)).await;
                     }
                 },
+            }
+
+            // If handle_connection() exited, but we had a previously-valid connection (i.e.
+            // have_connected is true) then we want to retry the connection. This is likely to
+            // happen if Vibin goes offline temporarily, or if the local machine is coming back
+            // from sleep.
+            if *manager.have_connected.lock().unwrap() == true {
+                println!("Will attempt WebSocket reconnect in {RETRY_DELAY_SECS} seconds");
+                sleep(Duration::from_secs(RETRY_DELAY_SECS)).await;
+            } else {
+                println!("Not attempting WebSocket reconnect");
+                break;
             }
         }
 

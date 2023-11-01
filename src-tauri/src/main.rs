@@ -7,7 +7,7 @@ use tauri::async_runtime::Mutex as TauriMutex;
 use tauri::Manager;
 
 use weevibin::state::{AppState, AppStateMutex, WeeVibinMessage, VibinState, VibinStateMutex};
-use weevibin::websocket::{WebSocketConnection, WebSocketManager, WebSocketManagerMutex};
+use weevibin::websocket::{WebSocketManager, WebSocketManagerMutex};
 
 /// Called by the UI once it's ready. There's probably a different idiomatic-Tauri way to do this.
 #[tauri::command]
@@ -17,7 +17,6 @@ async fn on_ui_ready(
     vibin_state: tauri::State<'_, VibinStateMutex>,
     app_handle: tauri::AppHandle,
 ) -> Result<(), String> {
-    println!(">>> {}", &WeeVibinMessage::AppState.to_string());
     app_handle
         .emit_all(&WeeVibinMessage::AppState.to_string(), &*app_state.inner().lock().unwrap())
         .unwrap();
