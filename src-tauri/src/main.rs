@@ -114,7 +114,6 @@ fn main() {
         .manage(vibin_state)
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_positioner::init())
-        .invoke_handler(tauri::generate_handler![on_ui_ready, set_vibin_server])
         .enable_macos_default_menu(false)
         .system_tray(system_tray)
         .on_system_tray_event(|app, event|{
@@ -168,6 +167,7 @@ fn main() {
             }
             _ => {}
         })
+        .invoke_handler(tauri::generate_handler![on_ui_ready, set_vibin_server])
         .build(context)
         .expect("Error while building WeeVibin")
         .run(|_app_handle, event| match event {
