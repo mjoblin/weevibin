@@ -51,7 +51,6 @@ button:hover {
 button:enabled:active {
     position: relative;
     top: 1px;
-    border-color: var(--accent-color-dim);
 }
 
 button:disabled {
