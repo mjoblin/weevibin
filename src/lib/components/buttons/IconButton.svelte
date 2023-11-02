@@ -4,60 +4,73 @@
 
     import { colorFromCssVar } from "../../utils.ts";
 
+    type Variant = "filled" | "outline" | "subtle";
+
     // TODO: Investigate using CSS's "filter: brightness(1.2);" for hover
 
     export let icon = IconQuestionMark;
+    export let variant: Variant = "subtle";
     export let disabled: boolean = false;
     export let size: number = 20;
-    export let withBackground: boolean = false;
     export var color: string | undefined = undefined;
-    export var backgroundColor: string | undefined = undefined;
 
     let textDim = colorFromCssVar("--text-dim");
     let textMax = colorFromCssVar("--text-max");
-    let accentColorBright = colorFromCssVar("--accent-color-bright");
+    let accentColor = colorFromCssVar("--accent-color");
     let backgroundDim = colorFromCssVar("--background-dim");
 
-    // TODO: Why doesn't the following work?
-    // $: color = color ?? withBackground ? textMax : textDim;
-    $: {
-        if (typeof color === "undefined") {
-            color = withBackground ? textMax : textDim;
-        }
+    // Establish core color (and its dimmed flavor). This core color will be used for the button
+    // background and border, in different ways depending on variant.
+    $: if (typeof color === "undefined") {
+        color = variant === "subtle" ? textDim : accentColor;
     }
-
-    $: {
-        if (typeof backgroundColor === "undefined") {
-            backgroundColor = withBackground ? accentColorBright : "transparent";
-        }
-    }
-
-    let colorMax = textMax;
 
     $: colorDim = tinycolor(color).darken(20).toString();
-    $: colorBright = tinycolor(color).lighten(20).toString();
 
-    $: backgroundColorHover =
-        withBackground ? tinycolor(backgroundColor).darken(10).toString() : backgroundDim;
-    $: backgroundColorDisabled = withBackground ? backgroundDim : "transparent";
+    // Each button variant might have a different color for its icon, background, and border.
+    $: iconColor = color;
+    $: backgroundColor = color;
+    $: backgroundColorHover = color;
+    $: borderColor = color;
+    $: borderColorHover = color;
+
+    $: if (variant === "filled") {
+        iconColor = textMax;
+        backgroundColor = color;
+        const backgroundDimmed = tinycolor(backgroundColor).darken(5).toString();
+        backgroundColorHover = backgroundDimmed;
+        borderColor = color;
+        borderColorHover = backgroundDimmed;
+    } else if (variant === "outline") {
+        iconColor = color;
+        backgroundColor = "transparent";
+        backgroundColorHover = "transparent";
+        borderColor = color;
+        borderColorHover = color;
+    } else if (variant === "subtle") {
+        iconColor = color;
+        backgroundColor = "transparent";
+        backgroundColorHover = backgroundDim;
+        borderColor = "transparent";
+        borderColorHover = "transparent";
+    }
 
     let padding = ".3em .3em";
 
     $: cssVarStyles =
         `--color:${color};` +
         `--color-dim:${colorDim};` +
-        `--color-bright:${colorBright};` +
-        `--color-max:${colorMax};` +
         `--background-color:${backgroundColor};` +
         `--background-color-hover:${backgroundColorHover};` +
-        `--background-color-disabled:${backgroundColorDisabled};` +
+        `--border:1px solid ${borderColor};` +
+        `--border-hover:1px solid ${borderColorHover};` +
         `--padding:${padding};`;
 </script>
 
 <div>
     <button type="button" style={cssVarStyles} {disabled} on:click>
         <div class="button-content">
-            <svelte:component this={icon} {size}/>
+            <svelte:component this={icon} {size} color={iconColor} />
             <slot />
         </div>
     </button>
@@ -71,7 +84,7 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        border: none;
+        border: var(--border);
         border-radius: 4px;
         font-family: inherit;
         font-size: 1em;
@@ -84,16 +97,11 @@
 
         &:hover:enabled {
             background-color: var(--background-color-hover);
-            color: var(--color-bright);
-        }
-
-        &:active:enabled {
-            color: var(--color-max);
+            border: var(--border-hover);
         }
 
         &:disabled {
             color: var(--color-dim);
-            background-color: var(--background-color-disabled);
             cursor: not-allowed;
         }
     }

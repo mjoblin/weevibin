@@ -1,14 +1,23 @@
 <script lang="ts">
+    import tinycolor from "tinycolor2";
+
+    import { colorFromCssVar } from "../../utils.ts";
     import IconButton from "./IconButton.svelte";
+
+    let onColor = tinycolor(colorFromCssVar("--accent-color-bright")).brighten(20).toString();
 
     export let icon;
     export let disabled: boolean = false;
     export let isOn: boolean = false;
     export let size: number = 12;
-
-    let onColor = "#339af0";
-    let offColor = "#a6a7ab";
 </script>
 
-<IconButton {icon} bind:disabled={disabled} {size} color={isOn ? onColor : offColor} on:click />
+<IconButton
+    variant="subtle"
+    {icon}
+    {size}
+    color={isOn ? onColor : undefined}
+    bind:disabled={disabled}
+    on:click
+/>
 

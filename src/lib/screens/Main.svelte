@@ -1,6 +1,8 @@
 <script lang="ts">
+    import { isPowerOn } from "../state.ts";
     import { seek } from "../vibin_api.ts";
     import Playhead from "../components/Playhead.svelte";
+    import Standby from "../components/Standby.svelte";
     import StatusLine from "../components/StatusLine.svelte";
     import TrackInfo from "../components/TrackInfo.svelte";
     import TransportControls from "../components/TransportControls.svelte";
@@ -15,7 +17,11 @@
 <div class="MainScreen">
     <div class="now-playing">
         <TrackInfo />
-        <VolumeControls />
+        {#if $isPowerOn}
+            <VolumeControls />
+        {:else}
+            <Standby />
+        {/if}
     </div>
     <div class="playback-controls">
         <TransportControls />

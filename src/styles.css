@@ -49,6 +49,8 @@ button:hover {
 }
 
 button:active {
+    position: relative;
+    top: 1px;
     border-color: var(--accent-color-dim);
 }
 
