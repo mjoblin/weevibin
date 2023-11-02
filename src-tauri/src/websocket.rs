@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
 
 use futures_util::StreamExt;
+use log::{info};
 use serde::{Deserialize, Serialize};
 use tauri::async_runtime::Mutex as TauriMutex;
 use tauri::{AppHandle, Manager};
@@ -607,7 +608,7 @@ impl WebSocketConnection {
         app_handle: AppHandle,
         manager: WebSocketManager,
     ) {
-        println!("WebSocketConnection::start has been called: {vibin_host}");
+        info!("WebSocketConnection::start has been called: {vibin_host}");
         self.vibin_host = vibin_host.to_owned();
 
         self.stop_flag = Some(stop_flag.clone());

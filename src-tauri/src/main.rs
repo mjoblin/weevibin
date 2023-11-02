@@ -3,9 +3,13 @@
 
 use std::sync::{Arc, Mutex};
 
+use log;
 use tauri::async_runtime::Mutex as TauriMutex;
 use tauri::{CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu};
+use tauri_plugin_log::{LogTarget, TimezoneStrategy};
+use tauri_plugin_log::fern::colors::ColoredLevelConfig;
 use tauri_plugin_positioner::{Position, WindowExt};
+use time;
 // use window_vibrancy::{apply_vibrancy, NSVisualEffectMaterial, NSVisualEffectState};
 
 use weevibin::state::{AppState, AppStateMutex, WeeVibinMessage, VibinState, VibinStateMutex};
@@ -14,6 +18,12 @@ use weevibin::websocket::{WebSocketManager, WebSocketManagerMutex};
 // TODO: Hide when clicking on menu bar away from app window <-- SEEMS OK NOW?
 // TODO: Have UI properly show on current virtual desktop rather than always activating the desktop
 //  the UI was first opened on
+
+#[cfg(debug_assertions)]
+const LOG_TARGETS: [LogTarget; 3] = [LogTarget::Stdout, LogTarget::Webview, LogTarget::LogDir];
+
+#[cfg(not(debug_assertions))]
+const LOG_TARGETS: [LogTarget; 2] = [LogTarget::Stdout, LogTarget::LogDir];
 
 /// Called by the UI once it's ready. There's probably a different idiomatic-Tauri way to do this.
 #[tauri::command]
@@ -112,6 +122,26 @@ fn main() {
         })
         .manage(app_state)
         .manage(vibin_state)
+        .plugin(tauri_plugin_log::Builder::default()
+            .targets(LOG_TARGETS)
+            .format(|out, message, record| {
+                let date_format =
+                    time::format_description::parse("[year]-[month]-[day]T[hour]:[minute]:[second]")
+                        .unwrap();
+
+                let colors = ColoredLevelConfig::default();
+
+                out.finish(format_args!(
+                    "{} [{}] [{}] {}",
+                    TimezoneStrategy::UseUtc.get_now().format(&date_format).unwrap(),
+                    colors.color(record.level()),
+                    record.target(),
+                    message
+                ))
+            })
+            .level(log::LevelFilter::Info)
+            .build()
+        )
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_positioner::init())
         .enable_macos_default_menu(false)

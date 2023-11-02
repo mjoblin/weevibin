@@ -1,9 +1,11 @@
 <script lang="ts">
     import { appState, currentScreen, uiInitialized, vibinHost } from "./lib/state";
 
-    import { connectToVibin } from "./lib/utils.ts";
+    import { connectToVibin, logger } from "./lib/utils.ts";
     import Settings from "./lib/screens/Settings.svelte";
     import Main from "./lib/screens/Main.svelte";
+
+    logger.info("Initializing UI");
 
     let haveAttemptedStartupVibinConnect = false;
 
