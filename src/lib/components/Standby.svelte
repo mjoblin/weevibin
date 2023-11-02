@@ -13,7 +13,7 @@
 
     span {
         font-size: 0.8em;
-        font-weight: 600;
+        font-weight: 500;
         line-height: 1.0em;
         color: var(--flax);
     }
