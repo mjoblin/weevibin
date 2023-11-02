@@ -7,6 +7,7 @@
     type Variant = "filled" | "outline" | "subtle";
 
     // TODO: Investigate using CSS's "filter: brightness(1.2);" for hover
+    // TODO: Improve display of disabled state (currently only "subtle" is explicitly handled)
 
     export let icon = IconQuestionMark;
     export let variant: Variant = "subtle";
@@ -48,7 +49,7 @@
         borderColor = color;
         borderColorHover = color;
     } else if (variant === "subtle") {
-        iconColor = color;
+        iconColor = disabled ? colorDim : color;
         backgroundColor = "transparent";
         backgroundColorHover = backgroundDim;
         borderColor = "transparent";
@@ -60,6 +61,7 @@
     $: cssVarStyles =
         `--color:${color};` +
         `--color-dim:${colorDim};` +
+        `--icon-color:${iconColor};` +
         `--background-color:${backgroundColor};` +
         `--background-color-hover:${backgroundColorHover};` +
         `--border:1px solid ${borderColor};` +
@@ -70,7 +72,7 @@
 <div>
     <button type="button" style={cssVarStyles} {disabled} on:click>
         <div class="button-content">
-            <svelte:component this={icon} {size} color={iconColor} />
+            <svelte:component this={icon} {size} />
             <slot />
         </div>
     </button>
@@ -110,5 +112,6 @@
         display: flex;
         align-items: center;
         gap: 5px;
+        color: var(--icon-color);
     }
 </style>

@@ -48,7 +48,7 @@ button:hover {
     background-color: var(--accent-color-bright);
 }
 
-button:active {
+button:enabled:active {
     position: relative;
     top: 1px;
     border-color: var(--accent-color-dim);
