@@ -3,7 +3,7 @@
 
 use std::sync::{Arc, Mutex};
 
-use log;
+use log::{info};
 use tauri::async_runtime::Mutex as TauriMutex;
 use tauri::{CustomMenuItem, Manager, SystemTray, SystemTrayEvent, SystemTrayMenu};
 use tauri_plugin_log::{LogTarget, TimezoneStrategy};
@@ -54,16 +54,15 @@ async fn set_vibin_server(
 ) -> Result<String, String> {
     match url::Url::parse(vibin_server.as_str()) {
         Ok(_) => {
-            println!("Setting server: {:?}", vibin_server);
+            info!("UI requested new Vibin server: {:?}", vibin_server);
 
-            println!("Command is waiting for WebSocket manager lock");
+            info!("Waiting for WebSocket manager lock");
             let mut manager = ws_manager.inner().lock().await;
 
-            println!("Command is waiting for WebSocket disconnect");
+            info!("Waiting for WebSocket disconnect");
             manager.stop().await;
 
-            println!("Command wait complete");
-
+            info!("Setting server name: {:?}", vibin_server);
             manager.vibin_host = Some(Box::new(vibin_server));
             manager.start();
 
@@ -96,7 +95,7 @@ fn main() {
 
     tauri::Builder::default()
         .setup(move |app| {
-            println!("Data directory: {:?}", app.handle().path_resolver().app_data_dir().unwrap());
+            info!("Application data directory: {:?}", app.handle().path_resolver().app_data_dir().unwrap());
 
             let ws_manager_mutex = Arc::new(TauriMutex::new(WebSocketManager::new(
                 None,

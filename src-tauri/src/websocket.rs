@@ -2,7 +2,7 @@ use std::sync::{Arc, Mutex};
 use std::time::SystemTime;
 
 use futures_util::StreamExt;
-use log::{info};
+use log::{info, warn, error};
 use serde::{Deserialize, Serialize};
 use tauri::async_runtime::Mutex as TauriMutex;
 use tauri::{AppHandle, Manager};
@@ -227,19 +227,19 @@ impl WebSocketManager {
 
     pub fn start(&mut self) {
         if *self.is_started.lock().unwrap() == true {
-            println!("WebSocketManager is already started; ignoring start request");
+            warn!("WebSocketManager is already started; ignoring start request");
             return;
         }
 
         if self.vibin_host.is_none() {
-            println!("WebSocketManager not starting; no vibin host specified");
+            warn!("WebSocketManager not starting; no vibin host specified");
             return;
         }
 
         *self.is_started.lock().unwrap() = true;
         *self.have_connected.lock().unwrap() = false;
 
-        println!("WebSocketManager is starting for: {}", match &self.vibin_host {
+        info!("WebSocketManager is starting for: {}", match &self.vibin_host {
             Some(inner) => *inner.clone(),
             None => "unknown".to_string(),
         });
@@ -255,7 +255,7 @@ impl WebSocketManager {
         *self.stop_flag.lock().unwrap() = false;
 
         tauri::async_runtime::spawn(async move {
-            println!("WebSocketManager is starting the WebSocketConnection");
+            info!("WebSocketManager is starting the WebSocketConnection");
             self_clone
                 .connection
                 .lock()
@@ -270,7 +270,7 @@ impl WebSocketManager {
                 )
                 .await;
 
-            println!("WebSocketManager start() of WebSocketConnection has completed");
+            info!("WebSocketManager start() of WebSocketConnection has completed");
 
             // self_clone.app_state_mutex.lock().unwrap().vibin_connection = Disconnected(None);
             *self_clone.is_started.lock().unwrap() = false;
@@ -282,18 +282,18 @@ impl WebSocketManager {
         match self.app_state_mutex.lock().unwrap().vibin_connection {
             Connected(_) => {},
             _ => {
-                println!("WebSocketManager not connected; ignoring stop() request");
+                warn!("WebSocketManager not connected; ignoring stop() request");
                 return;
             }
         }
 
-        println!("WebSocketManager requesting WebSocketConnection disconnect");
+        info!("WebSocketManager requesting WebSocketConnection disconnect");
 
         self.app_state_mutex.lock().unwrap().vibin_connection = Disconnecting;
         self.app_handle.emit_app_state(&self.app_state_mutex.lock().unwrap());
         *self.stop_flag.lock().unwrap() = true;
 
-        println!("WebSocketManager waiting for disconnect");
+        info!("WebSocketManager waiting for disconnect");
 
         let mut is_disconnected = false;
 
@@ -305,7 +305,7 @@ impl WebSocketManager {
             }
         }
 
-        println!("WebSocketManager has detected WebSocketConnection disconnect");
+        info!("WebSocketManager has detected WebSocketConnection disconnect");
 
         self.app_state_mutex.lock().unwrap().vibin_connection = Disconnected(None);
         *self.is_started.lock().unwrap() = false;
@@ -431,7 +431,7 @@ impl WebSocketConnection {
                     let err =
                         "Connection state is not Disconnected; not proceeding with Vibin WebSocket connection";
 
-                    println!("{}", &err);
+                    error!("{}", &err);
                     app_handle.emit_websocket_error(&err);
 
                     return Ok(());
@@ -482,10 +482,7 @@ impl WebSocketConnection {
         {
             let mut app_state = app_state_mutex.lock().unwrap();
 
-            println!(
-                "Connected to Vibin WebSocket server: {:?}",
-                self.vibin_host
-            );
+            info!("Connected to Vibin WebSocket server: {:?}",self.vibin_host);
             app_state.vibin_connection = Connected(self.vibin_host.clone());
             app_handle.emit_app_state(&app_state);
         }
@@ -518,7 +515,7 @@ impl WebSocketConnection {
 
                     // Check if we've been told to stop listening.
                     if *self.stop_flag.as_ref().unwrap().lock().unwrap() == true {
-                        println!("WebSocket handler stop_flag detected");
+                        info!("WebSocket handler stop_flag detected");
                         break;
                     }
 
@@ -531,12 +528,12 @@ impl WebSocketConnection {
                             };
 
                             if duration.as_secs() as f64 > ping_duration_check {
-                                println!("WebSocket ping not received for {ping_duration_check} secs");
+                                warn!("WebSocket ping not received for {ping_duration_check} secs");
 
                                 return Err(VibinWebSocketError::ClientLostConnectionError);
                             }
                         },
-                        Err(e) => println!("WebSocket error determining last ping duration: {:?}", e),
+                        Err(e) => error!("WebSocket error determining last ping duration: {:?}", e),
                     }
                 },
                 Some(next_item) = read.next() => {
@@ -563,7 +560,7 @@ impl WebSocketConnection {
                                     // Explicit server connection close. This is distinct from the client
                                     // losing the connection for other reasons (which is detected by ping
                                     // time checks).
-                                    println!("WebSocket connection has been closed by Vibin");
+                                    warn!("WebSocket connection has been closed by Vibin");
                                     return Err(VibinWebSocketError::ServerClosedConnectionError);
                                 },
                                 tungstenite::Message::Text(message_text) => {
@@ -580,7 +577,7 @@ impl WebSocketConnection {
                                     }
                                 },
                                 unexpected => {
-                                    println!("Ignoring unexpected WebSocket message type: {:?}", unexpected);
+                                    error!("Ignoring unexpected WebSocket message type: {:?}", unexpected);
                                 },
                             }
                         },
@@ -594,7 +591,7 @@ impl WebSocketConnection {
         app_state.vibin_connection = Disconnected(None);
         app_handle.emit_app_state(&app_state);
 
-        println!("Vibin WebSocket reader has completed");
+        info!("Vibin WebSocket reader has completed");
 
         Ok(())
     }
@@ -624,7 +621,7 @@ impl WebSocketConnection {
                 .await
             {
                 Ok(_) => {
-                    println!("WebSocketConnection handle_websocket() has ended successfully");
+                    info!("WebSocketConnection handle_websocket() has ended successfully");
                     app_state_mutex.lock().unwrap().set_disconnected(None);
                     *self.stop_flag.as_ref().unwrap().lock().unwrap() = false;
 
@@ -639,7 +636,7 @@ impl WebSocketConnection {
                             let error = format!("IO error: {:?}", e);
                             app_state_mutex.lock().unwrap().set_disconnected(Some(error.clone()));
 
-                            println!("WebSocket manager error: {:?}", &error);
+                            error!("WebSocketManager error: {:?}", &error);
                             app_handle.emit_websocket_error(&error);
                         }
                         _ => {
@@ -647,18 +644,18 @@ impl WebSocketConnection {
                             app_state_mutex.lock().unwrap().set_disconnected(Some(error.clone()));
                             app_handle.emit_websocket_error(&error);
 
-                            println!("Unhandled WebSocket manager error: {:?}", error);
+                            error!("Unhandled WebSocketManager error: {:?}", error);
                         }
                     },
                     VibinWebSocketError::CustomError(e) => {
                         app_state_mutex.lock().unwrap().set_disconnected(Some(e.clone()));
                         app_handle.emit_websocket_error(&e);
 
-                        println!("WebSocket manager error: {:?}", e);
+                        error!("WebSocketManager error: {:?}", e);
                     },
                     VibinWebSocketError::ClientLostConnectionError => {
                         let msg = String::from("Client lost connection to WebSocket server");
-                        println!("{msg}");
+                        warn!("{msg}");
 
                         {
                             let mut app_state = app_state_mutex.lock().unwrap();
@@ -670,7 +667,7 @@ impl WebSocketConnection {
                     },
                     VibinWebSocketError::ServerClosedConnectionError => {
                         let msg = String::from("WebSocket server closed the connection");
-                        println!("{msg}");
+                        warn!("{msg}");
 
                         {
                             let mut app_state = app_state_mutex.lock().unwrap();
@@ -688,14 +685,14 @@ impl WebSocketConnection {
             // happen if Vibin goes offline temporarily, or if the local machine is coming back
             // from sleep.
             if *manager.have_connected.lock().unwrap() == true {
-                println!("Will attempt WebSocket reconnect in {RETRY_DELAY_SECS} seconds");
+                info!("Will attempt WebSocket reconnect in {RETRY_DELAY_SECS} seconds");
                 sleep(Duration::from_secs(RETRY_DELAY_SECS)).await;
             } else {
-                println!("Not attempting WebSocket reconnect");
+                info!("Not attempting WebSocket reconnect");
                 break;
             }
         }
 
-        println!("WebSocketConnection start() has completed");
+        info!("WebSocketConnection start() has completed");
     }
 }
