@@ -8,7 +8,7 @@
 <div class="TrackInfo">
     <div
         class={"art" + `${!artUrl ? " art-unavailable" : ""}`}
-        style="background-image: url({artUrl})"
+        style={`background-image: ${artUrl ? `url(${artUrl})` : undefined}`}
     />
     <div class="details">
         {#if haveDisplayDetails}
