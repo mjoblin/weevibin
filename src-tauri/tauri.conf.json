@@ -46,7 +46,8 @@
                 "decorations": false,
                 "focus": false,
                 "transparent": true,
-                "skipTaskbar": true
+                "skipTaskbar": true,
+                "alwaysOnTop": true
             }
         ],
         "systemTray": {
