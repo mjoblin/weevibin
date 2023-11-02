@@ -1,7 +1,7 @@
 [package]
 name = "weevibin"
-version = "0.0.0"
-description = "A Tauri App"
+version = "1.0.0"
+description = "A System Tray application for Vibin"
 authors = ["you"]
 license = ""
 repository = ""
