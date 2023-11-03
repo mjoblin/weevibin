@@ -67,6 +67,12 @@ To develop in [RustRover]:
 The application can also be developed in VS Code, although this has not been tested. See
 [Debugging in VS Code] for more details.
 
+### Building
+
+The application can be built with `npm run tauri build`. For this to complete successfully, first
+edit `tauri.conf.json` and change the `tauri.bundle.identifier` to something other than
+`"com.tauri.app"`.
+
 ### Application structure
 
 The application is made up of:
