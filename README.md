@@ -19,17 +19,25 @@ be run independently.
 * Various audio sources (local media, AirPlay, Internet Radio, etc).
 * Ability to set the Vibin host.
 
+## Screenshots
+
+### Local media source
+
 <img src="https://github.com/mjoblin/media/blob/main/weevibin/images/source_local_media.png" width="400" />
-<p>
+
+### AirPlay source
 
 <img src="https://github.com/mjoblin/media/blob/main/weevibin/images/source_airplay.png" width="400" />
-<p>
+
+### Internet Radio source
 
 <img src="https://github.com/mjoblin/media/blob/main/weevibin/images/source_internet_radio.png" width="400" />
-<p>
+
+### Settings
 
 <img src="https://github.com/mjoblin/media/blob/main/weevibin/images/settings.png" width="400" />
-<p>
+
+### Standby mode
 
 <img src="https://github.com/mjoblin/media/blob/main/weevibin/images/standby_mode.png" width="400" />
 
