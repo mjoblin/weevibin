@@ -1,4 +1,5 @@
 import { invoke } from "@tauri-apps/api/tauri";
+import { fetch, ResponseType } from "@tauri-apps/api/http";
 import * as logger from "tauri-plugin-log-api";
 
 import { DEFAULT_VIBIN_PORT } from "./consts.ts";
@@ -33,8 +34,31 @@ const colorFromCssVar = (cssVarName: string): string | undefined => {
     return undefined;
 }
 
+/**
+ * Check whether the provided url is valid (200-level HTTP response).
+ */
+const isUrlOk = async (url: string, responseType: ResponseType = ResponseType.Binary) => {
+    let isOk = false;
+
+    try {
+        const result = await fetch(url, {
+            method: "GET",
+            responseType,
+            timeout: 5,
+        });
+
+        isOk = result.ok;
+    } catch (e) {
+        logger.warn(`UI could not determine URL validity for ${url}: ${e}`);
+    }
+
+    return isOk;
+}
+
 export {
     colorFromCssVar,
     connectToVibin,
+    isUrlOk,
     logger,
 };
+
