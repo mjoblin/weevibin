@@ -1,7 +1,7 @@
 # `weevibin`
 
 `weevibin` is a System Tray application for the [`vibin`](https://github.com/mjoblin/vibin)
-StreamMagic music streaming controller. `weevibin` is the scaled-back sibling of the full
+StreamMagic music streaming controller. `weevibin` is a scaled-back sibling of the full
 [`vibinui`](https://github.com/mjoblin/vibinui) Web interface. `weevibin` and `vibinui` can
 be run independently.
 
