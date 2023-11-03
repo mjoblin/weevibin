@@ -58,7 +58,7 @@ To develop in [RustRover]:
    * Attach the `Cargo.toml`.
    * Create a "Cargo" Run Configuration, set the "Working directory" to `weevibin/src-tauri`, and
      the "Command" to `run --no-default-features`.
-5. Start the Run Configuration.
+   * Start the Run Configuration.
 
 The application can also be developed in VS Code, although this has not been tested. See
 [Debugging in VS Code] for more details.
