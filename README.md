@@ -71,7 +71,7 @@ The application can also be developed in VS Code, although this has not been tes
 
 The application can be built with `npm run tauri build`. For this to complete successfully, first
 edit `tauri.conf.json` and change the `tauri.bundle.identifier` to something other than
-`"com.tauri.app"`.
+`"com.tauri.dev"`.
 
 ### Application structure
 
