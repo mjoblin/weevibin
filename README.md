@@ -5,7 +5,10 @@ StreamMagic music streaming controller. `weevibin` is the scaled-back sibling of
 [`vibinui`](https://github.com/mjoblin/vibinui) Web interface. `weevibin` and `vibinui` can
 be run independently.
 
-<img src="https://github.com/mjoblin/media/blob/main/weevibin/images/interface.png" width="400" />
+<div style="display: flex; gap: 10px">
+    <img src="https://github.com/mjoblin/media/blob/main/weevibin/images/interface.png" width="400" />
+    <img src="https://github.com/mjoblin/media/blob/main/weevibin/video/weevibin_usage.gif" width="425" />
+</div>
 
 ## Features
 
@@ -40,10 +43,6 @@ be run independently.
 ### Standby mode
 
 <img src="https://github.com/mjoblin/media/blob/main/weevibin/images/standby_mode.png" width="400" />
-
-### weevibin in use
-
-<img src="https://github.com/mjoblin/media/blob/main/weevibin/video/weevibin_usage.gif" width="425" />
 
 ## Developers
 
