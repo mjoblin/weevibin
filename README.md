@@ -98,6 +98,6 @@ WebSocket flow.
 
 [Tauri Prerequisites]: https://tauri.app/v1/guides/getting-started/prerequisites
 [Tauri]: https://tauri.app
-[Svelte]: https:/svelte.dev
+[Svelte]: https://svelte.dev
 [RustRover]: https://www.jetbrains.com/rust
 [Debugging in VS Code]: https://tauri.app/v1/guides/debugging/vs-code
