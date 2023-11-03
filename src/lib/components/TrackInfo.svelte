@@ -34,7 +34,7 @@
     .TrackInfo {
         display: flex;
         gap: 0.7em;
-        align-items: center;
+        align-items: flex-start;
         max-width: 100%;
         padding: 3px;
         overflow: hidden;
@@ -83,6 +83,7 @@
         }
 
         & .details-line1 {
+            margin-top: 0.4em;
             font-weight: 600;
             font-size: 0.9em;
         }
