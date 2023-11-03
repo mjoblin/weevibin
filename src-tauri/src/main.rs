@@ -124,6 +124,7 @@ fn main() {
         .plugin(tauri_plugin_log::Builder::default()
             .targets(LOG_TARGETS)
             .format(|out, message, record| {
+                // In macOS, logs are in ~/Library/Logs/<bundle_identifier>/
                 let date_format =
                     time::format_description::parse("[year]-[month]-[day]T[hour]:[minute]:[second]")
                         .unwrap();
