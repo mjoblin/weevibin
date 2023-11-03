@@ -41,6 +41,10 @@ be run independently.
 
 <img src="https://github.com/mjoblin/media/blob/main/weevibin/images/standby_mode.png" width="400" />
 
+### weevibin in use
+
+<img src="https://github.com/mjoblin/media/blob/main/weevibin/video/weevibin_usage.gif" width="425" />
+
 ## Developers
 
 `weevibin` is a [Tauri] application, using [Svelte] for the UI.
