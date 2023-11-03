@@ -1,17 +1,22 @@
 <script lang="ts">
     import { isConnected, vibinState } from "../state.ts";
+    import { isUrlOk } from "../utils.ts";
+
+    let isArtImageOk: boolean = true;
 
     $: artUrl = $vibinState.display.art_url;
-    $: haveDisplayDetails = $vibinState.display.line1 || $vibinState.display.line2 || $vibinState.display.line3;
+    $: haveTextDetails = $vibinState.display.line1 || $vibinState.display.line2 || $vibinState.display.line3;
+
+    $: artUrl && isUrlOk(artUrl).then((isOk) => isArtImageOk = isOk);
 </script>
 
 <div class="TrackInfo">
     <div
-        class={"art" + `${!artUrl ? " art-unavailable" : ""}`}
-        style={`background-image: ${artUrl ? `url(${artUrl})` : undefined}`}
+        class={"art" + `${!(artUrl && isArtImageOk) ? " art-unavailable" : ""}`}
+        style={`background-image: ${artUrl && isArtImageOk ? `url(${artUrl})` : undefined}`}
     />
     <div class="details">
-        {#if haveDisplayDetails}
+        {#if haveTextDetails}
             <span class="details-line1">{$vibinState.display.line1 || ""}</span>
             <span class="details-line2">{$vibinState.display.line2 || ""}</span>
             <span class="details-line3">{$vibinState.display.line3 || ""}</span>
