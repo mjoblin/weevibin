@@ -5,11 +5,11 @@ StreamMagic music streaming controller. `weevibin` is a scaled-back sibling of t
 [`vibinui`](https://github.com/mjoblin/vibinui) Web interface. `weevibin` and `vibinui` can
 be run independently.
 
-<img src="https://github.com/mjoblin/media/blob/main/weevibin/images/interface.png" width="400" />
+<img alt="Interface" src="https://github.com/mjoblin/media/blob/main/weevibin/images/interface.png" width="400" />
 
 #### In use
 
-<img src="https://github.com/mjoblin/media/blob/main/weevibin/video/weevibin_usage.gif" width="425" />
+<img alt="In use" src="https://github.com/mjoblin/media/blob/main/weevibin/video/weevibin_usage.gif" width="425" />
 
 ## Features
 
@@ -27,23 +27,23 @@ be run independently.
 
 ### Local media source
 
-<img src="https://github.com/mjoblin/media/blob/main/weevibin/images/source_local_media.png" width="400" />
+<img alt="Local media source" src="https://github.com/mjoblin/media/blob/main/weevibin/images/source_local_media.png" width="400" />
 
 ### AirPlay source
 
-<img src="https://github.com/mjoblin/media/blob/main/weevibin/images/source_airplay.png" width="400" />
+<img alt="AirPlay source" src="https://github.com/mjoblin/media/blob/main/weevibin/images/source_airplay.png" width="400" />
 
 ### Internet Radio source
 
-<img src="https://github.com/mjoblin/media/blob/main/weevibin/images/source_internet_radio.png" width="400" />
+<img alt="Internet Radio source" src="https://github.com/mjoblin/media/blob/main/weevibin/images/source_internet_radio.png" width="400" />
 
 ### Settings
 
-<img src="https://github.com/mjoblin/media/blob/main/weevibin/images/settings.png" width="400" />
+<img alt="Settings" src="https://github.com/mjoblin/media/blob/main/weevibin/images/settings.png" width="400" />
 
 ### Standby mode
 
-<img src="https://github.com/mjoblin/media/blob/main/weevibin/images/standby_mode.png" width="400" />
+<img alt="Standby mode" src="https://github.com/mjoblin/media/blob/main/weevibin/images/standby_mode.png" width="400" />
 
 ## Developers
 
