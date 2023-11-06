@@ -1,4 +1,4 @@
-import { derived, writable } from "svelte/store";
+import { type Updater, derived, writable } from "svelte/store";
 import { listen } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/tauri";
 
@@ -72,7 +72,7 @@ export let appState = writable<AppState>({ vibin_connection: { state: "Disconnec
 
 export let vibinState = writable<VibinState>(DEFAULT_VIBIN_STATE);
 
-export let playheadPosition = writable<number | null>(null);
+export let playheadPosition = writable<number | undefined>(undefined);
 
 /**
  * Create a Svelte writable which wraps the persisted Vibin host details.
@@ -120,9 +120,6 @@ export const isBufferingAudio = derived(vibinState, ($vibinState, setIsBuffering
 
 // ------------------------------------------------------------------------------------------------
 
-// Track the last seen audio source
-let lastSeenSourceClass: SourceClass | undefined = undefined;
-
 /**
  * Initialize the state-related components of the application.
  *
@@ -133,7 +130,7 @@ let lastSeenSourceClass: SourceClass | undefined = undefined;
 const initialize = async () => {
     await listen<AppState>("AppState", (message) => {
         appState.set(message.payload);
-        playheadPosition.set(null);
+        playheadPosition.set(undefined);
 
         if (message.payload.vibin_connection.state === "Connected") {
             vibinHost.setHaveConnected();
@@ -154,14 +151,23 @@ const initialize = async () => {
     });
 
     await listen<VibinState>("VibinState", (message) => {
-        vibinState.set(message.payload);
+        const vibinStateUpdater: Updater<VibinState> = (priorState: VibinState) => {
+            const newState = message.payload;
 
-        if (message.payload.source?.class !== lastSeenSourceClass) {
-            // When the last seen audio source changes, the playhead position from the previous
-            // source is no longer valid.
-            lastSeenSourceClass = message.payload.source?.class;
-            playheadPosition.set(null);
+            // Reset the playhead position to null whenever the streamer enters an "I'm starting
+            // playback from scratch in some way" mode. Currently this means when the streamer has
+            // just been powered on, or the audio source has changed.
+            if (
+                (priorState.streamer_power === "off" && newState.streamer_power === "on") ||
+                priorState.source?.class !== newState.source?.class
+            ) {
+                playheadPosition.set(undefined);
+            }
+
+            return newState;
         }
+
+        vibinState.update(vibinStateUpdater);
     });
 
     await listen<Position>("Position", (message) => {

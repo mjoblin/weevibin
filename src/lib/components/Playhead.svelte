@@ -2,6 +2,13 @@
     import { playheadPosition, vibinState } from "../state.ts";
     import { colorFromCssVar } from "../utils.ts";
 
+    // The application's $playheadPosition might be undefined, which is a valid state representing
+    // "I'm probably not playing/paused right now". We want to display this as "--:--", but we
+    // also want to allow the slider to render at the zero position. So we distinguish between the
+    // application's $playheadPosition and this component's playheadPositionBindable ("bindable"
+    // because it is guaranteed to be a number which can be bound to the slider's value).
+    $: playheadPositionBindable = $playheadPosition || 0;
+
     $: progress = $playheadPosition && $vibinState.active_track?.duration ?
         ($playheadPosition / $vibinState.active_track.duration) * 100 : 0;
 
@@ -31,12 +38,12 @@
     <input
         style={cssVarStyles}
         class:can-seek={canSeek}
-        disabled={!canSeek}
+        disabled={!canSeek || typeof $playheadPosition === "undefined"}
         type="range"
         min="0"
         max={$vibinState.active_track?.duration}
         step="1"
-        bind:value={$playheadPosition}
+        bind:value={playheadPositionBindable}
         on:click
     />
     <span class="time">{prettyDuration($vibinState.active_track?.duration)}</span>
