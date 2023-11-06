@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { isConnected, vibinState } from "../state.ts";
+    import { isBufferingAudio, isConnected, vibinState } from "../state.ts";
     import { isUrlOk } from "../utils.ts";
 
     let isArtImageOk: boolean = true;
@@ -8,15 +8,18 @@
     $: haveTextDetails = $vibinState.display.line1 || $vibinState.display.line2 || $vibinState.display.line3;
 
     $: artUrl && isUrlOk(artUrl).then((isOk) => isArtImageOk = isOk);
+    $: console.log("BUFFERING", $isBufferingAudio);
 </script>
 
 <div class="TrackInfo">
     <div
-        class={"art" + `${!(artUrl && isArtImageOk) ? " art-unavailable" : ""}`}
-        style={`background-image: ${artUrl && isArtImageOk ? `url(${artUrl})` : undefined}`}
+        class={"art" + `${!(artUrl && isArtImageOk) || $isBufferingAudio ? " art-unavailable" : ""}`}
+        style={`background-image: ${artUrl && isArtImageOk &&!$isBufferingAudio ? `url(${artUrl})` : undefined}`}
     />
     <div class="details">
-        {#if haveTextDetails}
+        {#if $isBufferingAudio}
+            <span class="buffering">buffering audio</span>
+        {:else if haveTextDetails}
             <span class="details-line1">{$vibinState.display.line1 || ""}</span>
             <span class="details-line2">{$vibinState.display.line2 || ""}</span>
             <span class="details-line3">{$vibinState.display.line3 || ""}</span>
@@ -70,6 +73,24 @@
         color: var(--text-dim);
         font-size: 0.5em;
         font-weight: 600;
+    }
+
+    @keyframes oscillate {
+        0%, 100% {
+            opacity: 1.0;
+        }
+        50% {
+            opacity: 0.65;
+        }
+    }
+
+    .buffering {
+        margin-top: 0.4em;
+        font-weight: 600;
+        font-size: 0.7em;
+        color: var(--text-dim);
+
+        animation: oscillate 3s ease-in-out 0s infinite;
     }
 
     .details {
