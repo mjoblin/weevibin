@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { isPowerOn } from "../state.ts";
+    import { isStreamerPowerOn } from "../state.ts";
     import { seek } from "../vibin_api.ts";
     import Playhead from "../components/Playhead.svelte";
     import Standby from "../components/Standby.svelte";
@@ -17,7 +17,7 @@
 <div class="MainScreen">
     <div class="now-playing">
         <TrackInfo />
-        {#if $isPowerOn}
+        {#if $isStreamerPowerOn}
             <VolumeControls />
         {:else}
             <Standby />

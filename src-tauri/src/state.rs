@@ -159,6 +159,7 @@ pub struct ActiveTrack {
 #[derive(Clone, Serialize)]
 pub struct VibinState {
     pub power: Option<String>,
+    pub streamer_power: Option<String>,
     pub amplifier: Option<Amplifier>,
     pub display: StreamerDisplay,
     pub transport: Option<TransportState>,
@@ -170,6 +171,7 @@ impl VibinState {
     pub fn new() -> VibinState {
         VibinState {
             power: Some("off".into()),
+            streamer_power: Some("off".into()),
             amplifier: None,
             display: StreamerDisplay {
                 line1: None,

@@ -61,6 +61,7 @@ struct VibinMessage {
 
 #[derive(Deserialize)]
 struct StreamerPayload {
+    power: Option<String>,
     sources: Option<StreamerSources>,
     display: Option<StreamerDisplay>,
 }
@@ -342,6 +343,7 @@ impl WebSocketConnection {
                     serde_json::from_value(vibin_msg.payload).unwrap();
 
                 vibin_state.power = system_payload.power;
+                vibin_state.streamer_power = system_payload.streamer.power;
 
                 if let Some(amplifier) = system_payload.amplifier {
                     vibin_state.amplifier = Some(Amplifier {
