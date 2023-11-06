@@ -43,6 +43,7 @@ type AppError = {
 // All known state information from the Vibin backend
 export type VibinState = {
     power?: Power,
+    streamer_power?: Power,
     amplifier?: Amplifier,
     display: StreamerDisplay,
     transport?: Transport,
@@ -89,7 +90,12 @@ async function createVibinHostState() {
 
 export const vibinHost = await createVibinHostState();
 
-export const isPowerOn = derived(vibinState, ($vibinState) => $vibinState.power === "on");
+// "System Power" represents both the streamer (always present) and the amplifier (optionally
+// present). The system is on when the streamer is on and the amplifier (if present) is on.
+// "Streamer Power" represents just the streamer (always present). This allows the UI to detect
+// when the streamer is on while the (optional) amplifier is off.
+export const isSystemPowerOn = derived(vibinState, ($vibinState) => $vibinState.power === "on");
+export const isStreamerPowerOn = derived(vibinState, ($vibinState) => $vibinState.streamer_power === "on");
 
 export const isConnected = derived(appState, ($appState) => $appState.vibin_connection.state === "Connected");
 

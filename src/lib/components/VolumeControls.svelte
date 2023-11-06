@@ -8,7 +8,7 @@
         IconVolumeOff
     } from "@tabler/icons-svelte";
 
-    import { isPowerOn, vibinState } from "../state.ts";
+    import { isSystemPowerOn, vibinState } from "../state.ts";
     import { toggleMute, volumeDown, volumeSet, volumeUp } from "../vibin_api.ts";
     import { colorFromCssVar } from "../utils.ts";
     import Arc from "./Arc.svelte";
@@ -25,7 +25,7 @@
     $: volumeBigDown = Math.max(volume - bigVolumeChangeAmount, 0.0);
 </script>
 
-{#if $vibinState.amplifier && $isPowerOn}
+{#if $vibinState.amplifier && $isSystemPowerOn}
     <div class="VolumeControls">
         <ToggleButton
             icon={$vibinState.amplifier.mute === "off" ? IconVolume : IconVolumeOff}
