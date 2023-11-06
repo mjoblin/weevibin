@@ -57,6 +57,11 @@ export type VibinState = {
 
 const DEFAULT_VIBIN_STATE = { display: {} };
 
+// Delay announcing buffering state for 2 seconds. This is because the streamer enters a buffering
+// state between tracks, which the UI considers to be a false positive -- but the UI *does* want
+// to react to longer buffering durations (like when waiting for the music source NAS to spin up).
+const IS_BUFFERING_DELAY = 2000;
+
 export let currentScreen = writable<Screen>("main");
 
 export let uiInitialized = writable<boolean>(false);
@@ -100,6 +105,18 @@ export const isStreamerPowerOn = derived(vibinState, ($vibinState) => $vibinStat
 export const isConnected = derived(appState, ($appState) => $appState.vibin_connection.state === "Connected");
 
 export const isPlaying = derived(vibinState, ($vibinState) => $vibinState.transport?.play_state === "play");
+
+export const isBufferingAudio = derived(vibinState, ($vibinState, setIsBuffering) => {
+    let isCurrentlyBuffering = $vibinState.transport?.play_state === "buffering";
+
+    let timeoutId = setTimeout(() => {
+        setIsBuffering(isCurrentlyBuffering);
+    }, isCurrentlyBuffering ? IS_BUFFERING_DELAY : 0);
+
+    return () => {
+        clearTimeout(timeoutId);
+    }
+}, false);
 
 // ------------------------------------------------------------------------------------------------
 
